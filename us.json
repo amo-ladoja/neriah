@@ -1,0 +1,177 @@
+{
+  "userStories": [
+    {
+      "id": "US-1",
+      "title": "Sign Up & Immediate Value",
+      "priority": "P0",
+      "persona": "busy professional",
+      "action": "sign in with one click and immediately see my actionable emails",
+      "benefit": "I can start being productive without any setup",
+      "acceptanceCriteria": [
+        "\"Sign in with Google\" button on landing page",
+        "Single OAuth flow grants auth + Gmail read access",
+        "User sees \"Analyzing your inbox...\" loading state",
+        "First tasks appear within 60 seconds",
+        "No additional setup steps required"
+      ],
+      "status": "todo"
+    },
+    {
+      "id": "US-2",
+      "title": "View My Action Items",
+      "priority": "P0",
+      "persona": "Neriah user",
+      "action": "see all my actionable items in one clean list",
+      "benefit": "I know exactly what needs my attention",
+      "acceptanceCriteria": [
+        "Dashboard shows list of extracted items",
+        "Each item shows: title, sender, category, time received",
+        "Items sorted by priority/recency",
+        "Can filter by category (invoices, follow-ups, deadlines)",
+        "Empty state if no items (with encouraging message)"
+      ],
+      "status": "todo"
+    },
+    {
+      "id": "US-3",
+      "title": "Reply to Email",
+      "priority": "P0",
+      "persona": "Neriah user",
+      "action": "quickly reply to an email that needs response",
+      "benefit": "I can take action without leaving my workflow",
+      "acceptanceCriteria": [
+        "\"Reply\" button on each relevant item",
+        "Tapping opens Gmail compose in new tab/app",
+        "Gmail compose pre-filled with: To, Subject (Re:), thread context",
+        "After sending, user can mark item complete in Neriah"
+      ],
+      "status": "todo"
+    },
+    {
+      "id": "US-4",
+      "title": "View Invoice/Attachment",
+      "priority": "P0",
+      "persona": "Neriah user",
+      "action": "view invoices and attachments without digging through email",
+      "benefit": "I can quickly review documents that need attention",
+      "acceptanceCriteria": [
+        "Items with attachments show attachment icon",
+        "\"View Invoice\" / \"View Attachment\" button",
+        "PDF viewer opens in-app (or new tab)",
+        "Image attachments display inline",
+        "Can download attachment"
+      ],
+      "status": "todo"
+    },
+    {
+      "id": "US-5",
+      "title": "Complete an Item",
+      "priority": "P0",
+      "persona": "Neriah user",
+      "action": "mark items as complete when I've handled them",
+      "benefit": "my list stays clean and focused",
+      "acceptanceCriteria": [
+        "\"Done\" / checkmark button on each item",
+        "Completed items move to \"Completed\" section (or hide)",
+        "Can undo completion within 5 seconds",
+        "Completion syncs to database immediately"
+      ],
+      "status": "todo"
+    },
+    {
+      "id": "US-6",
+      "title": "Receive New Items Automatically",
+      "priority": "P0",
+      "persona": "Neriah user",
+      "action": "have new actionable items appear automatically",
+      "benefit": "I don't miss anything important",
+      "acceptanceCriteria": [
+        "Background sync runs every 3 hours",
+        "New items appear at top of list",
+        "Push notification: \"3 new items need attention\"",
+        "Badge count updates on PWA icon",
+        "Can manually trigger sync (pull-to-refresh)"
+      ],
+      "status": "todo"
+    },
+    {
+      "id": "US-7",
+      "title": "Snooze an Item",
+      "priority": "P1",
+      "persona": "Neriah user",
+      "action": "snooze items I can't handle right now",
+      "benefit": "they resurface when I'm ready",
+      "acceptanceCriteria": [
+        "\"Snooze\" button with options: Later today, Tomorrow, Next week",
+        "Snoozed items disappear from main list",
+        "Items reappear at scheduled time",
+        "Can view all snoozed items in separate section"
+      ],
+      "status": "todo"
+    },
+    {
+      "id": "US-8",
+      "title": "Schedule Meeting from Email",
+      "priority": "P1",
+      "persona": "Neriah user",
+      "action": "schedule meetings from email requests",
+      "benefit": "I can book time without switching apps",
+      "acceptanceCriteria": [
+        "Items with meeting requests show \"Schedule Meeting\" button",
+        "Tapping opens Google Calendar with pre-filled: title, time, attendees, description",
+        "Can schedule directly or edit before creating",
+        "After scheduling, can mark item complete",
+        "Handles multiple suggested times from email"
+      ],
+      "status": "todo"
+    },
+    {
+      "id": "US-9",
+      "title": "View Categorized Receipts",
+      "priority": "P0",
+      "persona": "Neriah user",
+      "action": "see receipts auto-categorized by expense type",
+      "benefit": "I can quickly find and review expenses",
+      "acceptanceCriteria": [
+        "Receipts extracted with vendor, amount, date, invoice number",
+        "AI assigns category: Software, Travel, Medical, Office, Meals, Utilities, Other",
+        "Can filter dashboard: \"Show only Travel receipts\"",
+        "Receipt details display in structured format (vendor, amount, date, category)",
+        "Category badge shows on each receipt item"
+      ],
+      "status": "todo"
+    },
+    {
+      "id": "US-10",
+      "title": "Review Receipt Details",
+      "priority": "P0",
+      "persona": "Neriah user",
+      "action": "view receipt PDFs and extracted details",
+      "benefit": "I can verify expense information",
+      "acceptanceCriteria": [
+        "\"View Receipt\" button opens in-app PDF viewer",
+        "Shows extracted: Vendor, Amount, Currency, Date, Invoice #, Category, Tax",
+        "Can download original PDF or image",
+        "Image receipts display inline",
+        "OCR confidence score displayed"
+      ],
+      "status": "todo"
+    },
+    {
+      "id": "US-11",
+      "title": "Provide Feedback on Extractions",
+      "priority": "P1",
+      "persona": "Neriah user",
+      "action": "mark extractions as correct/incorrect",
+      "benefit": "the AI improves over time and I can report issues",
+      "acceptanceCriteria": [
+        "Thumbs up/down buttons on each item (tasks, receipts, meetings)",
+        "Optional: \"What was wrong?\" comment field",
+        "Feedback saved immediately",
+        "Visual confirmation after submission (\"Thanks for your feedback!\")",
+        "Can change feedback after submission"
+      ],
+      "status": "todo"
+    }
+  ]
+}

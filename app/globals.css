@@ -1,0 +1,71 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light mode (optional - app is primarily dark mode) */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 7%;
+    --card: 0 0% 99%;
+    --card-foreground: 0 0% 7%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 7%;
+    --primary: 55 98% 48%; /* Yellow #E8F401 */
+    --primary-foreground: 0 0% 2%; /* Black text on yellow */
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 12%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 46%;
+    --accent: 55 98% 48%; /* Yellow #E8F401 */
+    --accent-foreground: 0 0% 2%; /* Black text on yellow */
+    --destructive: 12 83% 27%; /* Dark red #80240B */
+    --destructive-foreground: 0 0% 99%;
+    --border: 0 0% 89%;
+    --input: 0 0% 89%;
+    --ring: 55 98% 48%; /* Yellow */
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Dark mode - Primary theme based on dashboard design */
+    --background: 0 0% 7%; /* #131313 - Main background */
+    --foreground: 0 0% 99%; /* #FDFDFD - Primary text */
+    --card: 0 0% 12%; /* #1E1E1E - Card backgrounds */
+    --card-foreground: 0 0% 99%; /* #FDFDFD - Card text */
+    --popover: 0 0% 12%; /* #1E1E1E */
+    --popover-foreground: 0 0% 99%; /* #FDFDFD */
+    --primary: 55 98% 48%; /* #E8F401 - Yellow action buttons */
+    --primary-foreground: 0 0% 2%; /* #060606 - Black text on yellow */
+    --secondary: 0 0% 12%; /* #1E1E1E */
+    --secondary-foreground: 0 0% 99%; /* #FDFDFD */
+    --muted: 0 0% 12%; /* #1E1E1E */
+    --muted-foreground: 0 0% 60%; /* #FDFDFD at 60% opacity */
+    --accent: 55 98% 48%; /* #E8F401 - Yellow */
+    --accent-foreground: 0 0% 2%; /* #060606 - Black */
+    --destructive: 12 83% 27%; /* #80240B - Dark red for errors */
+    --destructive-foreground: 0 0% 99%; /* #FDFDFD */
+    --border: 0 0% 99% / 0.2; /* #FDFDFD at 20% opacity */
+    --input: 0 0% 12%; /* #1E1E1E */
+    --ring: 55 98% 48%; /* #E8F401 - Yellow */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /* Custom font will be loaded here */
+  /* User will provide custom font files */
+}
+
+@layer utilities {
+  /* Touch-friendly tap targets from PRD (44px minimum) */
+  .tap-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+}
