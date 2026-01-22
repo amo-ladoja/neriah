@@ -8,13 +8,16 @@
       "action": "sign in with one click and immediately see my actionable emails",
       "benefit": "I can start being productive without any setup",
       "acceptanceCriteria": [
-        "\"Sign in with Google\" button on landing page",
-        "Single OAuth flow grants auth + Gmail read access",
-        "User sees \"Analyzing your inbox...\" loading state",
-        "First tasks appear within 60 seconds",
-        "No additional setup steps required"
+        "✅ \"Sign in with Google\" button on landing page",
+        "✅ Single OAuth flow grants auth + Gmail read access",
+        "✅ User sees \"Analyzing your inbox...\" loading state",
+        "❌ First tasks appear within 60 seconds",
+        "✅ No additional setup steps required"
       ],
-      "status": "todo"
+      "status": "in_progress",
+      "completedCriteria": 4,
+      "totalCriteria": 5,
+      "notes": "Auth working, extraction page exists. Need: Gmail API integration, Claude extraction, initial extraction endpoint"
     },
     {
       "id": "US-2",
@@ -24,13 +27,16 @@
       "action": "see all my actionable items in one clean list",
       "benefit": "I know exactly what needs my attention",
       "acceptanceCriteria": [
-        "Dashboard shows list of extracted items",
-        "Each item shows: title, sender, category, time received",
-        "Items sorted by priority/recency",
-        "Can filter by category (invoices, follow-ups, deadlines)",
-        "Empty state if no items (with encouraging message)"
+        "🚧 Dashboard shows list of extracted items (UI only, mock data)",
+        "✅ Each item shows: title, sender, category, time received",
+        "❌ Items sorted by priority/recency",
+        "🚧 Can filter by category (tabs exist, not functional)",
+        "❌ Empty state if no items (with encouraging message)"
       ],
-      "status": "todo"
+      "status": "in_progress",
+      "completedCriteria": 1,
+      "totalCriteria": 5,
+      "notes": "Dashboard UI complete with mock data. Need: Supabase queries, real-time subscriptions, sorting logic, filtering, empty states"
     },
     {
       "id": "US-3",
@@ -40,12 +46,15 @@
       "action": "quickly reply to an email that needs response",
       "benefit": "I can take action without leaving my workflow",
       "acceptanceCriteria": [
-        "\"Reply\" button on each relevant item",
-        "Tapping opens Gmail compose in new tab/app",
-        "Gmail compose pre-filled with: To, Subject (Re:), thread context",
-        "After sending, user can mark item complete in Neriah"
+        "✅ \"Reply\" button on each relevant item",
+        "❌ Tapping opens Gmail compose in new tab/app",
+        "❌ Gmail compose pre-filled with: To, Subject (Re:), thread context",
+        "❌ After sending, user can mark item complete in Neriah"
       ],
-      "status": "todo"
+      "status": "in_progress",
+      "completedCriteria": 1,
+      "totalCriteria": 4,
+      "notes": "Reply button UI exists. Need: Gmail deep link generation utility, onClick handler"
     },
     {
       "id": "US-4",
@@ -71,12 +80,15 @@
       "action": "mark items as complete when I've handled them",
       "benefit": "my list stays clean and focused",
       "acceptanceCriteria": [
-        "\"Done\" / checkmark button on each item",
-        "Completed items move to \"Completed\" section (or hide)",
-        "Can undo completion within 5 seconds",
-        "Completion syncs to database immediately"
+        "✅ \"Done\" / checkmark button on each item",
+        "❌ Completed items move to \"Completed\" section (or hide)",
+        "❌ Can undo completion within 5 seconds",
+        "❌ Completion syncs to database immediately"
       ],
-      "status": "todo"
+      "status": "in_progress",
+      "completedCriteria": 1,
+      "totalCriteria": 4,
+      "notes": "Done button UI exists. Need: API endpoint for completion, optimistic UI updates, undo functionality"
     },
     {
       "id": "US-6",
@@ -102,12 +114,15 @@
       "action": "snooze items I can't handle right now",
       "benefit": "they resurface when I'm ready",
       "acceptanceCriteria": [
-        "\"Snooze\" button with options: Later today, Tomorrow, Next week",
-        "Snoozed items disappear from main list",
-        "Items reappear at scheduled time",
-        "Can view all snoozed items in separate section"
+        "✅ \"Snooze\" button with options: Later today, Tomorrow, Next week",
+        "❌ Snoozed items disappear from main list",
+        "❌ Items reappear at scheduled time",
+        "❌ Can view all snoozed items in separate section"
       ],
-      "status": "todo"
+      "status": "in_progress",
+      "completedCriteria": 1,
+      "totalCriteria": 4,
+      "notes": "Snooze button UI exists. Need: API endpoint, snooze logic, cron job to resurface items"
     },
     {
       "id": "US-8",
@@ -117,13 +132,16 @@
       "action": "schedule meetings from email requests",
       "benefit": "I can book time without switching apps",
       "acceptanceCriteria": [
-        "Items with meeting requests show \"Schedule Meeting\" button",
-        "Tapping opens Google Calendar with pre-filled: title, time, attendees, description",
-        "Can schedule directly or edit before creating",
-        "After scheduling, can mark item complete",
-        "Handles multiple suggested times from email"
+        "✅ Items with meeting requests show \"Schedule Meeting\" button",
+        "❌ Tapping opens Google Calendar with pre-filled: title, time, attendees, description",
+        "❌ Can schedule directly or edit before creating",
+        "❌ After scheduling, can mark item complete",
+        "❌ Handles multiple suggested times from email"
       ],
-      "status": "todo"
+      "status": "in_progress",
+      "completedCriteria": 1,
+      "totalCriteria": 5,
+      "notes": "Schedule button UI exists. Need: Google Calendar deep link generation, meeting data extraction from AI"
     },
     {
       "id": "US-9",
@@ -165,13 +183,16 @@
       "action": "mark extractions as correct/incorrect",
       "benefit": "the AI improves over time and I can report issues",
       "acceptanceCriteria": [
-        "Thumbs up/down buttons on each item (tasks, receipts, meetings)",
-        "Optional: \"What was wrong?\" comment field",
-        "Feedback saved immediately",
-        "Visual confirmation after submission (\"Thanks for your feedback!\")",
-        "Can change feedback after submission"
+        "✅ Thumbs up/down buttons on each item (tasks, receipts, meetings)",
+        "❌ Optional: \"What was wrong?\" comment field",
+        "❌ Feedback saved immediately",
+        "❌ Visual confirmation after submission (\"Thanks for your feedback!\")",
+        "❌ Can change feedback after submission"
       ],
-      "status": "todo"
+      "status": "in_progress",
+      "completedCriteria": 1,
+      "totalCriteria": 5,
+      "notes": "Thumbs up/down button UI exists. Need: API endpoint for feedback, dialog for comments, optimistic UI updates"
     }
   ]
 }

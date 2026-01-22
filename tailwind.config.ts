@@ -1,5 +1,5 @@
 import type { Config } from "tailwindcss";
-import { semanticColors, flatColors } from "@/lib/constants/colors";
+import { semanticColors, flatColors } from "./lib/constants/colors";
 
 const config: Config = {
   darkMode: ["class"],
@@ -97,8 +97,7 @@ const config: Config = {
         "8": "64px",
       },
       fontFamily: {
-        // Placeholder for custom fonts - user will provide
-        sans: ["var(--font-custom)", "system-ui", "sans-serif"],
+        sans: ["SFT Schrifted Sans", "system-ui", "-apple-system", "sans-serif"],
       },
       keyframes: {
         "accordion-down": {
