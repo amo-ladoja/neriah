@@ -2,22 +2,39 @@
 
 **Your emails, turned into actions.**
 
-Neriah is a mobile-first web application (PWA) that extracts actionable items from Gmail using AI and presents them in a clean dashboard with one-tap actions.
+Neriah is a mobile-first web application (PWA) that extracts actionable items from Gmail using Claude AI and presents them in a clean dashboard with one-tap actions.
 
-## 📋 Project Documentation
+## ✨ Current Status
 
-- [Product Requirements Document](./neriah-mvp-prd-v2.md) - Complete PRD with features, timeline, and specifications
+🚀 **MVP Implementation Complete!** All core features (P0 + P1) are implemented and ready for deployment.
+
+### ✅ What's Working
+- Gmail OAuth integration with automatic token refresh
+- Claude AI extraction (tasks, receipts, meetings)
+- Background sync (manual + scheduled every 3 hours)
+- Receipt OCR processing (images + PDFs)
+- Calendar deep linking
+- Real-time dashboard updates
+- User feedback system
+- Supabase Storage for attachments
+
+### 📚 Documentation
+
+- **[SETUP_GUIDE.md](./SETUP_GUIDE.md)** - Complete production setup guide ⭐ **START HERE**
+- [Product Requirements Document](./neriah-mvp-prd-v2.md) - Complete PRD with features and specifications
 - [Architecture Guide](./architecture.md) - System architecture, data flow, and scaling strategies
-- [User Stories](./us.json) - All user stories with status tracking
+- [Implementation Plan](./plan.md) - Development progress and completed features
+- [User Stories](./us.json) - Feature tracking with acceptance criteria
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
 - Node.js 18+ and npm
-- A Supabase account ([sign up here](https://supabase.com))
-- A Google Cloud account for OAuth credentials
-- An Anthropic API key for Claude AI
+- A Supabase account with project created ([sign up here](https://supabase.com))
+- Google Cloud account with OAuth credentials configured
+- Anthropic API key for Claude AI ([get one here](https://console.anthropic.com))
+- Vercel account for deployment (optional for local dev)
 
 ### Installation
 
@@ -33,23 +50,47 @@ Neriah is a mobile-first web application (PWA) that extracts actionable items fr
    ```
 
 3. **Set up environment variables**
+
+   Create `.env.local` in the project root:
    ```bash
-   cp .env.example .env
+   # Supabase Configuration
+   NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+   SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+   # Google OAuth
+   GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=your-client-secret
+
+   # Anthropic Claude AI
+   ANTHROPIC_API_KEY=sk-ant-your-api-key
+
+   # Application URL
+   NEXT_PUBLIC_APP_URL=http://localhost:3000
+
+   # Cron Security (generate with: openssl rand -hex 32)
+   CRON_SECRET=your-generated-secret
    ```
 
-   Then edit `.env` and fill in your credentials:
-   - Supabase URL and keys (from your Supabase project)
-   - Google OAuth credentials (from Google Cloud Console)
-   - Anthropic API key (from Anthropic Console)
+4. **Set up Supabase Storage**
 
-4. **Run the development server**
+   See **[SETUP_GUIDE.md](./SETUP_GUIDE.md)** for detailed instructions on:
+   - Creating the `receipts` storage bucket
+   - Configuring RLS policies
+   - Setting up database tables
+
+5. **Run the development server**
    ```bash
    npm run dev
    ```
 
-5. **Open the app**
+6. **Open the app**
 
    Navigate to [http://localhost:3000](http://localhost:3000)
+
+7. **For Production Deployment**
+
+   Follow the complete setup guide: **[SETUP_GUIDE.md](./SETUP_GUIDE.md)**
 
 ## 🏗️ Project Structure
 
@@ -90,26 +131,38 @@ neriah/
 
 ## 🎨 Design System
 
-Based on the PRD specifications:
-
 ### Colors
-- **Primary**: `#3B82F6` (Blue accent)
-- **Success**: `#22C55E` (Green - complete)
-- **Warning**: `#F97316` (Orange - snooze)
-- **Urgent**: `#EF4444` (Red - urgent items)
-- **Background**: White
+The app uses a custom dark-mode color palette with precise opacity variants:
+
+**Primary Colors:**
+- **Primary/Accent**: `#E8F401` (Bright yellow for CTAs and highlights)
+- **Background**: `#131313` (Very dark background)
+- **Card Surface**: `#1E1E1E` (Card backgrounds and secondary surfaces)
+- **Foreground**: `#FDFDFD` (Near-white for text and icons)
+
+**Semantic Colors:**
+- **Success**: `#34A853` (Green for completed states)
+- **Urgent**: `#FF4815` (Orange/red for urgent items)
+- **Destructive**: `#80240B` (Dark red for errors and destructive actions)
+- **Deep Black**: `#060606` (Text on yellow backgrounds)
+
+**Opacity System:**
+Each color has variants at 100%, 60%, 40%, 30%, 20%, 15%, 12%, and 2% opacity for precise control of transparency.
 
 ### Typography
-- **Font**: Custom font (to be provided by design team)
-- Fallback: System UI fonts
+- **Font**: SFT Schrifted Sans (custom typeface)
+- **Weights**: 400 (Regular), 500 (Medium), 600 (DemiBold), 700 (Bold), 900 (Black)
+- **Fallback**: system-ui, -apple-system, sans-serif
 
 ### Spacing
-- **Grid System**: 8px base unit
-- **Touch Targets**: Minimum 44px (for mobile accessibility)
+- **Grid System**: 8px base unit (4px, 8px, 12px, 16px, 20px, 24px, 28px, 32px, 40px, 48px, 56px, 64px)
+- **Touch Targets**: Minimum 44px for mobile accessibility
 
 ### Border Radius
-- **Cards**: 8px
-- **Buttons**: 4px
+- **Cards**: 8px (`rounded-lg`)
+- **Buttons**: 4px (`rounded-md`)
+- **Tags/Pills**: 12px (`rounded-xl`)
+- **Small Elements**: 2px (`rounded-sm`)
 
 ## 🔧 Tech Stack
 
@@ -144,13 +197,14 @@ npm run start        # Start production server
 npm run lint         # Run ESLint
 ```
 
-### Adding Custom Fonts
+### Custom Font Implementation
 
-1. Place font files in `public/fonts/`
-2. Update `app/globals.css` with @font-face declarations
-3. Update `tailwind.config.ts` to reference the font family
+The project uses **SFT Schrifted Sans** as the primary typeface:
 
-See `public/fonts/README.md` for detailed instructions.
+- Font files are located in `public/fonts/`
+- @font-face declarations are in `app/globals.css`
+- Configured in `tailwind.config.ts` as the primary sans-serif font
+- All weights (400, 500, 600, 700, 900) with regular and italic variants are loaded
 
 ## 🗄️ Database Setup
 
