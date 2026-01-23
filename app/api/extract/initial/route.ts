@@ -52,7 +52,9 @@ export async function POST(request: NextRequest) {
       .from("sync_logs")
       .insert({
         user_id: user.id,
-        sync_type: "initial",
+        started_at: new Date().toISOString(),
+        emails_processed: 0,
+        items_extracted: 0,
         status: "running",
       })
       .select()

@@ -133,7 +133,8 @@ export async function submitFeedback(
     }
 
     const updateData: any = {
-      feedback_helpful: helpful,
+      user_feedback: helpful ? "positive" : "negative",
+      feedback_at: new Date().toISOString(),
     };
 
     if (comment) {

@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-import { formatRelativeTime } from "@/lib/utils";
 import { useItems } from "@/lib/hooks/useItems";
 import { markItemComplete, submitFeedback } from "@/lib/actions/items";
 import {
@@ -16,8 +14,332 @@ import type { Database } from "@/lib/types/database";
 type Item = Database["public"]["Tables"]["items"]["Row"];
 type FilterType = "all" | "tasks" | "receipts" | "meetings";
 
-export default function DashboardPage() {
-  const router = useRouter();
+// ============================================
+// Utility Components
+// ============================================
+
+const CircleDot = ({ color = "#ffffff" }: { color?: string }) => (
+  <div className="w-1 h-1 rounded-full" style={{ backgroundColor: color }} />
+);
+
+// ============================================
+// Tag Components
+// ============================================
+
+interface TagProps {
+  label: string;
+  variant?: "default" | "active";
+  onClick?: () => void;
+}
+
+const Tag = ({ label, variant = "default", onClick }: TagProps) => {
+  const isActive = variant === "active";
+
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center justify-center px-1.5 py-0.5 rounded-xl text-xs font-medium tracking-[0.2px] leading-[1.67] transition-all ${
+        isActive
+          ? "bg-[#80d0ae] border border-[#80d0ae4d] text-[#030303cc]"
+          : "bg-[#fdfdfd26] border border-[#fdfdfd33]/40 text-[#fdfdfdcc] hover:bg-[#fdfdfd33]"
+      }`}
+    >
+      {label}
+    </button>
+  );
+};
+
+interface SmallTagProps {
+  label: string;
+  variant: "reply" | "urgent" | "receipt" | "meetings";
+}
+
+const SmallTag = ({ label, variant }: SmallTagProps) => {
+  const styles = {
+    reply: "bg-[#e8f40126] border-[#e8f4014d]",
+    urgent: "bg-[#80240b26] border-[#80240b4d]",
+    receipt: "bg-[#e8f40126] border-[#e8f4014d]",
+    meetings: "bg-[#e8f40126] border-[#e8f4014d]",
+  };
+
+  return (
+    <div
+      className={`flex items-center justify-center px-2 py-[2px] rounded text-[6px] font-normal tracking-[0.4px] leading-[1.33] border-[0.4px] ${styles[variant]} text-[#fdfdfdcc] uppercase`}
+    >
+      {label}
+    </div>
+  );
+};
+
+// ============================================
+// Button Components
+// ============================================
+
+interface ActionButtonProps {
+  label: string;
+  iconPath: string;
+  variant?: "primary" | "secondary";
+  onClick?: () => void;
+}
+
+const ActionButton = ({
+  label,
+  iconPath,
+  variant = "secondary",
+  onClick,
+}: ActionButtonProps) => {
+  const isPrimary = variant === "primary";
+
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center justify-center gap-1.5 px-2 py-0.5 rounded-xl text-[8px] tracking-[0.4px] leading-[2.5] cursor-pointer transition-all ${
+        isPrimary
+          ? "bg-[#e8f401] text-[#131313] font-bold hover:bg-[#e8f401]/90"
+          : "text-[#fdfdfd] font-normal border border-[#fdfdfd33] hover:bg-[#fdfdfd0d]"
+      }`}
+    >
+      <Image src={iconPath} alt={label} width={14} height={14} className="w-3.5 h-3.5" />
+      <span>{label}</span>
+    </button>
+  );
+};
+
+// ============================================
+// Task Card Component
+// ============================================
+
+interface TaskCardProps {
+  item: Item;
+  onReply?: () => void;
+  onViewReceipt?: () => void;
+  onSchedule?: () => void;
+  onDone?: () => void;
+  onThumbsUp?: () => void;
+  onThumbsDown?: () => void;
+}
+
+const TaskCard = ({
+  item,
+  onReply,
+  onViewReceipt,
+  onSchedule,
+  onDone,
+  onThumbsUp,
+  onThumbsDown,
+}: TaskCardProps) => {
+  const isReply = ["reply", "follow_up", "deadline", "review"].includes(item.category);
+  const isReceipt = item.category === "invoice";
+  const isMeeting = item.category === "meeting";
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "";
+    return new Date(dateString)
+      .toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+      .toUpperCase();
+  };
+
+  const formatTime = (dateString: string | null) => {
+    if (!dateString) return "";
+    return new Date(dateString).toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const getTags = () => {
+    const tags: { label: string; variant: "reply" | "urgent" | "receipt" | "meetings" }[] = [];
+
+    if (isReply) {
+      tags.push({ label: "REPLY NEEDED", variant: "reply" });
+    } else if (isReceipt) {
+      tags.push({ label: "RECEIPT", variant: "receipt" });
+    } else if (isMeeting) {
+      tags.push({ label: "MEETINGS", variant: "meetings" });
+    }
+
+    if (item.priority === "urgent") {
+      tags.push({ label: "URGENT", variant: "urgent" });
+    }
+
+    return tags;
+  };
+
+  const senderInitials = item.sender_name
+    ? item.sender_name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+    : "?";
+
+  return (
+    <div className="flex flex-col gap-2 p-4 rounded-2xl bg-[#fdfdfd05] border-[0.4px] border-[#fdfdfd33]/40 backdrop-blur-[10.5px] shadow-[0_4px_21px_2px_rgba(0,0,0,0.15)]">
+      {/* Header */}
+      <div className="flex flex-col gap-2 w-full">
+        {/* Sender Info Row */}
+        <div className="flex justify-between items-start w-full">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full bg-[#fdfdfd33] flex items-center justify-center flex-shrink-0">
+              <span className="text-[10px] font-semibold text-[#fdfdfdcc]">
+                {senderInitials}
+              </span>
+            </div>
+            <div className="flex flex-col gap-[-1px]">
+              <span className="text-[10px] font-medium text-[#fdfdfdcc] tracking-[0.4px] leading-[2]">
+                {item.sender_name || "Unknown"}
+              </span>
+              <span className="text-[8px] text-[#fdfdfd66] tracking-[0.4px] leading-[2.5]">
+                {item.sender_email}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-[8px] font-medium text-[#fdfdfd99] tracking-[0.4px] leading-[2.5]">
+              {formatDate(item.email_date)}
+            </span>
+            <CircleDot color="#fdfdfd99" />
+            <span className="text-[8px] font-medium text-[#fdfdfd99] tracking-[0.4px] leading-[2.5]">
+              {formatTime(item.email_date)}
+            </span>
+          </div>
+        </div>
+
+        {/* Title */}
+        <p className="text-xs font-medium text-[#fdfdfdcc] tracking-[0.4px]">{item.title}</p>
+      </div>
+
+      {/* Content */}
+      {isReply && item.description && (
+        <div className="w-full">
+          <p className="text-[8px] text-[#fdfdfd99] tracking-[0.4px] leading-[1.375] line-clamp-2">
+            {item.description}
+          </p>
+        </div>
+      )}
+
+      {isReceipt && item.receipt_details && (
+        <div className="flex flex-col gap-0 rounded-lg bg-[#13131366] p-3 border-[0.4px] border-[#fdfdfd4d] w-full">
+          <span className="text-lg text-[#fdfdfdcc] tracking-[0.4px] font-medium">
+            {item.receipt_details.currency || "₦"}
+            {item.receipt_details.amount?.toLocaleString() || "0.00"}
+          </span>
+          <div className="flex items-center gap-1">
+            <span className="text-[8px] font-medium text-[#fdfdfd99] tracking-[0.4px] leading-[2.5]">
+              {item.receipt_details.vendor}
+            </span>
+            <CircleDot color="#fdfdfd99" />
+            <span className="text-[8px] font-medium text-[#fdfdfd99] tracking-[0.4px] leading-[2.5]">
+              {item.receipt_details.invoiceNumber || "N/A"}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {isMeeting && item.meeting_details && (
+        <div className="flex flex-col gap-0 rounded-lg bg-[#13131366] p-3 border-[0.4px] border-[#fdfdfd4d] w-full">
+          <span className="text-lg text-[#fdfdfdcc] tracking-[0.4px] font-medium">
+            {item.meeting_details.topic || item.title}
+          </span>
+          <div className="flex items-center gap-1">
+            <span className="text-[8px] font-medium text-[#fdfdfd99] tracking-[0.4px] leading-[2.5]">
+              {item.meeting_details.duration || 30} minutes
+            </span>
+            <CircleDot color="#fdfdfd99" />
+            <span className="text-[8px] font-medium text-[#fdfdfd99] tracking-[0.4px] leading-[2.5]">
+              {item.meeting_details.attendees?.length || 0} attendees
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Tags & Confidence */}
+      <div className="flex justify-between items-center w-full pb-3 border-b border-b-[#fdfdfd66]/40">
+        <div className="flex items-center gap-2">
+          {getTags().map((tag, index) => (
+            <SmallTag key={index} label={tag.label} variant={tag.variant} />
+          ))}
+        </div>
+        <div className="flex items-center gap-1">
+          <CircleDot color="#34a853" />
+          <span className="text-[8px] font-medium text-[#fdfdfd99] tracking-[0.4px] leading-[2.5]">
+            {Math.round((item.confidence || 0) * 100)}%
+          </span>
+        </div>
+      </div>
+
+      {/* Actions */}
+      <div className="flex justify-between items-center w-full">
+        <div className="flex items-center gap-3">
+          {isReply && (
+            <ActionButton
+              label="Reply"
+              iconPath="/reply.svg"
+              variant="primary"
+              onClick={onReply}
+            />
+          )}
+          {isReceipt && (
+            <ActionButton
+              label="View Receipt"
+              iconPath="/Receipt.svg"
+              variant="primary"
+              onClick={onViewReceipt}
+            />
+          )}
+          {isMeeting && (
+            <ActionButton
+              label="Schedule"
+              iconPath="/schedule.svg"
+              variant="primary"
+              onClick={onSchedule}
+            />
+          )}
+          <ActionButton label="Snooze" iconPath="/snooze.svg" />
+          <ActionButton label="Done" iconPath="/done.svg" onClick={onDone} />
+        </div>
+        {!item.user_feedback && (
+          <div className="flex items-center gap-[21px]">
+            <button
+              onClick={onThumbsUp}
+              className="hover:opacity-70 transition-opacity"
+            >
+              <Image
+                src="/correct.svg"
+                alt="Thumbs up"
+                width={14}
+                height={14}
+                className="w-3.5 h-3.5"
+              />
+            </button>
+            <button
+              onClick={onThumbsDown}
+              className="hover:opacity-70 transition-opacity"
+            >
+              <Image
+                src="/incorrect.svg"
+                alt="Thumbs down"
+                width={14}
+                height={14}
+                className="w-3.5 h-3.5"
+              />
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// ============================================
+// Main Dashboard Component
+// ============================================
+
+export default function Dashboard() {
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const { items, loading, error } = useItems(activeFilter);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -25,7 +347,6 @@ export default function DashboardPage() {
   const handleSync = async () => {
     setIsSyncing(true);
     try {
-      // TODO: Implement background sync endpoint
       await fetch("/api/sync", { method: "POST" });
     } catch (error) {
       console.error("Sync failed:", error);
@@ -72,424 +393,151 @@ export default function DashboardPage() {
     }
   };
 
-  const getPriorityBadgeColor = (priority: string) => {
-    switch (priority) {
-      case "urgent":
-        return "bg-[#8B4513]/20 text-[#FF6B6B] border border-[#FF6B6B]/30";
-      default:
-        return "bg-[#4A5F4E]/30 text-[#6B8E6F] border border-[#6B8E6F]/30";
-    }
-  };
-
-  const getCategoryBadgeColor = (category: string) => {
-    switch (category) {
-      case "reply":
-        return "bg-[#4A5F4E]/30 text-[#6B8E6F] border border-[#6B8E6F]/30";
-      case "invoice":
-        return "bg-[#8B4513]/20 text-[#D4A574] border border-[#D4A574]/30";
-      default:
-        return "bg-[#4A5F4E]/30 text-[#6B8E6F] border border-[#6B8E6F]/30";
-    }
-  };
-
-  const getReceiptCategoryColor = (category: string) => {
-    return "bg-[#8B4513]/20 text-[#D4A574] border border-[#D4A574]/30";
-  };
-
-  const renderItemCard = (item: Item) => {
-    const senderInitials = item.sender_name
-      ? item.sender_name
-          .split(" ")
-          .map((n) => n[0])
-          .join("")
-          .toUpperCase()
-      : "?";
-
-    const isReply = item.category === "reply" || ["reply", "follow_up", "deadline", "review"].includes(item.category);
-    const isReceipt = item.category === "invoice";
-    const isMeeting = item.category === "meeting";
-
-    return (
-      <div
-        key={item.id}
-        className="bg-[#1A1A1A]/80 backdrop-blur-xl rounded-[20px] p-5 mb-4 border border-white/5"
-      >
-        {/* Header */}
-        <div className="flex items-start justify-between mb-3">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-[#8B7355] flex items-center justify-center text-white font-semibold">
-              {senderInitials}
-            </div>
-            <div>
-              <p className="text-white font-medium text-base">
-                {item.sender_name || "Unknown"}
-              </p>
-              <p className="text-gray-400 text-sm">{item.sender_email}</p>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="text-gray-400 text-sm">
-              {item.email_date
-                ? new Date(item.email_date).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })
-                : ""}
-            </p>
-            <p className="text-gray-400 text-sm">
-              {item.email_date
-                ? new Date(item.email_date).toLocaleTimeString("en-US", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })
-                : ""}
-            </p>
-          </div>
-        </div>
-
-        {/* Title */}
-        <h3 className="text-white font-medium text-lg mb-3">{item.title}</h3>
-
-        {/* Description */}
-        {item.description && !isReceipt && (
-          <p className="text-gray-400 text-sm mb-3 line-clamp-2">
-            {item.description}
-          </p>
-        )}
-
-        {/* Receipt Display */}
-        {isReceipt && item.receipt_details && (
-          <div className="bg-black/40 rounded-2xl p-4 mb-3 border border-white/5">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="text-white font-bold text-3xl mb-1">
-                  {item.receipt_details.currency || "₦"}
-                  {item.receipt_details.amount?.toLocaleString() || "0.00"}
-                </p>
-                <p className="text-gray-400 text-sm">
-                  {item.receipt_details.vendor} •{" "}
-                  {item.receipt_details.invoiceNumber || "N/A"}
-                </p>
-              </div>
-              {item.receipt_category && (
-                <span
-                  className={`px-3 py-1 rounded-full text-xs font-medium ${getReceiptCategoryColor(
-                    item.receipt_category
-                  )}`}
-                >
-                  {item.receipt_category.charAt(0).toUpperCase() +
-                    item.receipt_category.slice(1)}
-                </span>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Badges */}
-        <div className="flex items-center gap-2 mb-4">
-          {/* Category Badge */}
-          <span
-            className={`px-3 py-1 rounded-full text-xs font-medium uppercase ${getCategoryBadgeColor(
-              item.category
-            )}`}
-          >
-            {item.category === "reply" && "REPLY NEEDED"}
-            {item.category === "invoice" && "RECEIPT"}
-            {item.category === "meeting" && "MEETING"}
-            {item.category === "follow_up" && "FOLLOW UP"}
-            {item.category === "deadline" && "DEADLINE"}
-            {item.category === "review" && "REVIEW"}
-          </span>
-
-          {/* Priority Badge */}
-          {item.priority && item.priority !== "normal" && (
-            <span
-              className={`px-3 py-1 rounded-full text-xs font-medium uppercase ${getPriorityBadgeColor(
-                item.priority
-              )}`}
-            >
-              {item.priority}
-            </span>
-          )}
-
-          {/* Confidence */}
-          <div className="ml-auto flex items-center gap-1">
-            <div className="w-2 h-2 rounded-full bg-green-500"></div>
-            <span className="text-gray-400 text-sm">
-              {Math.round((item.confidence || 0) * 100)}%
-            </span>
-          </div>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex items-center gap-2 mb-4 flex-wrap">
-          {/* Primary Action */}
-          {isReply && (
-            <button
-              onClick={() => handleReply(item)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-[#E8F401] rounded-full text-black font-semibold text-sm hover:bg-[#E8F401]/90 transition-all"
-            >
-              <Image
-                src="/reply.svg"
-                alt="Reply"
-                width={16}
-                height={16}
-                className="w-4 h-4"
-              />
-              Reply
-            </button>
-          )}
-          {isReceipt && (
-            <button className="flex items-center gap-2 px-4 py-2.5 bg-[#E8F401] rounded-full text-black font-semibold text-sm hover:bg-[#E8F401]/90 transition-all">
-              <Image
-                src="/Receipt.svg"
-                alt="Receipt"
-                width={16}
-                height={16}
-                className="w-4 h-4"
-              />
-              View Receipt
-            </button>
-          )}
-          {isMeeting && (
-            <button
-              onClick={() => handleScheduleMeeting(item)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-[#E8F401] rounded-full text-black font-semibold text-sm hover:bg-[#E8F401]/90 transition-all"
-            >
-              <Image
-                src="/schedule.svg"
-                alt="Schedule"
-                width={16}
-                height={16}
-                className="w-4 h-4"
-              />
-              Schedule
-            </button>
-          )}
-
-          {/* Snooze */}
-          <button className="flex items-center gap-2 px-4 py-2.5 bg-transparent rounded-full text-white font-medium text-sm border border-white/20 hover:bg-white/5 transition-all">
-            <Image
-              src="/snooze.svg"
-              alt="Snooze"
-              width={16}
-              height={16}
-              className="w-4 h-4"
-            />
-            Snooze
-          </button>
-
-          {/* Done */}
-          <button
-            onClick={() => handleMarkComplete(item.id)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-transparent rounded-full text-white font-medium text-sm border border-white/20 hover:bg-white/5 transition-all"
-          >
-            <Image
-              src="/done.svg"
-              alt="Done"
-              width={16}
-              height={16}
-              className="w-4 h-4"
-            />
-            Done
-          </button>
-
-          {/* Feedback */}
-          {!item.user_feedback && (
-            <>
-              <button
-                onClick={() => handleFeedback(item.id, true)}
-                className="ml-auto p-2.5 hover:bg-white/5 rounded-full transition-all"
-              >
-                <Image
-                  src="/correct.svg"
-                  alt="Thumbs up"
-                  width={20}
-                  height={20}
-                  className="w-5 h-5"
-                />
-              </button>
-              <button
-                onClick={() => handleFeedback(item.id, false)}
-                className="p-2.5 hover:bg-white/5 rounded-full transition-all"
-              >
-                <Image
-                  src="/incorrect.svg"
-                  alt="Thumbs down"
-                  width={20}
-                  height={20}
-                  className="w-5 h-5"
-                />
-              </button>
-            </>
-          )}
-        </div>
-      </div>
-    );
-  };
-
   return (
-    <div className="min-h-screen bg-[#0A0A0A] pb-24 relative overflow-hidden">
-      {/* Green Blur Effect - Bottom */}
-      <div className="absolute bottom-0 left-0 right-0 h-[400px] bg-[#4A9B5C] rounded-full blur-[200px] opacity-10 pointer-events-none"></div>
+    <div className="relative min-h-screen bg-[#1e1e1e] overflow-hidden pb-32">
+      {/* Background Gradient Effects */}
+      <div className="absolute w-[231px] h-[231px] rounded-full bg-[#0606064d] blur-[175px] -left-[71px] top-[473px]" />
+      <div className="absolute w-[231px] h-[231px] rounded-full bg-[#0606064d] blur-[175px] right-[139px] top-[156px]" />
+      <div className="absolute w-[285px] h-[285px] rounded-full bg-[#e8f40126] blur-[70px] right-[59px] bottom-[351px] mix-blend-lighten" />
 
-      {/* Header */}
-      <div className="relative z-10 px-6 pt-6 pb-4">
-        <div className="flex items-center justify-between mb-8">
-          {/* Profile */}
-          <button className="w-12 h-12 rounded-full bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all">
-            <Image src="/User.svg" alt="Profile" width={24} height={24} />
+      {/* Main Container - Responsive */}
+      <div className="relative w-full max-w-md lg:max-w-lg xl:max-w-xl mx-auto px-2 lg:px-4">
+        {/* Logo */}
+        <div className="flex items-center justify-center pt-[71px] pb-[22.158752px]">
+          <Image
+            src="/neriah-white.svg"
+            alt="Neriah"
+            width={123}
+            height={35}
+            className="w-[123px] h-[35px]"
+          />
+        </div>
+
+        {/* Header Icons */}
+        <div className="absolute left-2 lg:left-4 top-16">
+          <button className="flex items-center justify-center p-[9.984px] rounded-full bg-[#fdfdfd1f] backdrop-blur-[11.375px] border-[1.2px] border-[#fdfdfd33] hover:bg-[#fdfdfd26] transition-all shadow-[0_0_8px_rgba(253,253,253,0.3)]">
+            <Image src="/User.svg" alt="Profile" width={18} height={18} />
           </button>
+        </div>
 
-          {/* Logo */}
-          <div className="flex items-center gap-2">
-            <Image
-              src="/neriah_box.svg"
-              alt="Neriah"
-              width={28}
-              height={28}
-              className="w-7 h-7"
-            />
-            <span className="text-white text-2xl font-semibold">neriah</span>
+        <div className="absolute right-2 lg:right-4 top-16">
+          <button className="flex items-center justify-center p-[9.984px] rounded-full bg-[#fdfdfd1f] backdrop-blur-[11.375px] border-[1.2px] border-[#fdfdfd33] hover:bg-[#fdfdfd26] transition-all shadow-[0_0_8px_rgba(253,253,253,0.3)]">
+            <Image src="/search.svg" alt="Search" width={18} height={18} />
+          </button>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex flex-col gap-4 w-full">
+          {/* Filter Section */}
+          <div className="flex flex-col gap-[11.2px] w-full">
+            {/* Filter Tabs */}
+            <div className="flex items-center gap-[11.6886px] overflow-x-auto no-scrollbar pb-1">
+              <Tag
+                label="All"
+                variant={activeFilter === "all" ? "active" : "default"}
+                onClick={() => setActiveFilter("all")}
+              />
+              <Tag
+                label="Tasks"
+                variant={activeFilter === "tasks" ? "active" : "default"}
+                onClick={() => setActiveFilter("tasks")}
+              />
+              <Tag
+                label="Receipts"
+                variant={activeFilter === "receipts" ? "active" : "default"}
+                onClick={() => setActiveFilter("receipts")}
+              />
+              <Tag
+                label="Meetings"
+                variant={activeFilter === "meetings" ? "active" : "default"}
+                onClick={() => setActiveFilter("meetings")}
+              />
+            </div>
+
+            {/* Status Bar */}
+            <div className="flex justify-between items-center pl-1 pr-1 w-full">
+              <div className="flex items-center gap-1">
+                <span className="text-sm text-[#fdfdfd] tracking-[0.4px] leading-[1.67] font-medium">
+                  {items.length}
+                </span>
+                <span className="text-sm font-medium text-[#fdfdfd99] tracking-[0.4px] leading-[1.67]">
+                  items need attention
+                </span>
+              </div>
+              <button
+                onClick={handleSync}
+                disabled={isSyncing}
+                className="flex items-center gap-1.5 cursor-pointer hover:opacity-70 transition-opacity disabled:opacity-50"
+              >
+                <Image
+                  src="/snooze.svg"
+                  alt="Sync"
+                  width={12}
+                  height={12}
+                  className={isSyncing ? "animate-spin" : ""}
+                />
+                <span className="text-sm font-medium text-[#fdfdfd99] tracking-[0.4px] leading-[1.67]">
+                  sync now
+                </span>
+              </button>
+            </div>
           </div>
 
-          {/* Search */}
-          <button className="w-12 h-12 rounded-full bg-white/10 border border-white/20 flex items-center justify-center hover:bg-white/20 transition-all">
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 20 20"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <circle
-                cx="9"
-                cy="9"
-                r="6"
-                stroke="white"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-              <path
-                d="M14 14L18 18"
-                stroke="white"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-            </svg>
-          </button>
-        </div>
+          {/* Task Cards */}
+          <div className="flex flex-col gap-4 w-full">
+            {loading && (
+              <div className="flex items-center justify-center py-12">
+                <div className="w-8 h-8 border-2 border-[#e8f401] border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            )}
 
-        {/* Filter Tabs */}
-        <div className="flex items-center gap-3 mb-6 overflow-x-auto no-scrollbar">
-          <button
-            onClick={() => setActiveFilter("all")}
-            className={`px-6 py-2.5 rounded-full font-medium text-sm whitespace-nowrap transition-all ${
-              activeFilter === "all"
-                ? "bg-[#5FB574] text-white"
-                : "bg-white/10 text-gray-400 border border-white/10 hover:bg-white/20"
-            }`}
-          >
-            All
-          </button>
-          <button
-            onClick={() => setActiveFilter("tasks")}
-            className={`px-6 py-2.5 rounded-full font-medium text-sm whitespace-nowrap transition-all ${
-              activeFilter === "tasks"
-                ? "bg-[#5FB574] text-white"
-                : "bg-white/10 text-gray-400 border border-white/10 hover:bg-white/20"
-            }`}
-          >
-            Tasks
-          </button>
-          <button
-            onClick={() => setActiveFilter("receipts")}
-            className={`px-6 py-2.5 rounded-full font-medium text-sm whitespace-nowrap transition-all ${
-              activeFilter === "receipts"
-                ? "bg-[#5FB574] text-white"
-                : "bg-white/10 text-gray-400 border border-white/10 hover:bg-white/20"
-            }`}
-          >
-            Receipts
-          </button>
-          <button
-            onClick={() => setActiveFilter("meetings")}
-            className={`px-6 py-2.5 rounded-full font-medium text-sm whitespace-nowrap transition-all ${
-              activeFilter === "meetings"
-                ? "bg-[#5FB574] text-white"
-                : "bg-white/10 text-gray-400 border border-white/10 hover:bg-white/20"
-            }`}
-          >
-            Meetings
-          </button>
-        </div>
+            {error && (
+              <div className="text-center py-12">
+                <p className="text-[#fdfdfd99] text-sm">{error}</p>
+              </div>
+            )}
 
-        {/* Items Count & Sync */}
-        <div className="flex items-center justify-between mb-4">
-          <p className="text-white text-base">
-            <span className="font-bold">{items.length}</span>{" "}
-            <span className="text-gray-400">items need attention</span>
-          </p>
-          <button
-            onClick={handleSync}
-            disabled={isSyncing}
-            className="flex items-center gap-2 text-white hover:text-[#E8F401] transition-colors disabled:opacity-50"
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 16 16"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              className={isSyncing ? "animate-spin" : ""}
-            >
-              <path
-                d="M14 8C14 11.3137 11.3137 14 8 14C4.68629 14 2 11.3137 2 8C2 4.68629 4.68629 2 8 2C9.84871 2 11.5076 2.82597 12.6213 4.12132"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-              />
-              <path
-                d="M14 4V4.5M14 4.5V8H10.5"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <span className="text-sm">sync now</span>
-          </button>
+            {!loading && !error && items.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-[#fdfdfd99] text-sm">No items to display</p>
+              </div>
+            )}
+
+            {!loading &&
+              !error &&
+              items.map((item) => (
+                <TaskCard
+                  key={item.id}
+                  item={item}
+                  onReply={() => handleReply(item)}
+                  onViewReceipt={() => {
+                    /* TODO: Implement receipt viewer */
+                  }}
+                  onSchedule={() => handleScheduleMeeting(item)}
+                  onDone={() => handleMarkComplete(item.id)}
+                  onThumbsUp={() => handleFeedback(item.id, true)}
+                  onThumbsDown={() => handleFeedback(item.id, false)}
+                />
+              ))}
+          </div>
         </div>
       </div>
 
-      {/* Items List */}
-      <div className="relative z-10 px-6">
-        {loading && (
-          <div className="flex items-center justify-center py-12">
-            <div className="w-8 h-8 border-2 border-[#E8F401] border-t-transparent rounded-full animate-spin"></div>
+      {/* Bottom Navigation - Fixed */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#13131333] backdrop-blur-[17.5px] border-t-[0.4px] border-t-[#fdfdfd33]">
+        <div className="w-full max-w-md lg:max-w-lg xl:max-w-xl mx-auto px-6 py-6">
+          <div className="flex justify-center items-center gap-40">
+            <button className="hover:opacity-70 transition-opacity">
+              <Image src="/menu.svg" alt="Menu" width={24} height={24} />
+            </button>
+            <button className="hover:opacity-70 transition-opacity">
+              <Image src="/Chat.svg" alt="Chat" width={24} height={24} />
+            </button>
           </div>
-        )}
-
-        {!loading && items.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-400">No items to display</p>
-          </div>
-        )}
-
-        {!loading && items.map(renderItemCard)}
-      </div>
-
-      {/* Bottom Navigation */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#1A1A1A]/95 backdrop-blur-xl border-t border-white/5 px-6 py-4">
-        <div className="flex items-center justify-center gap-24">
-          <button className="p-3 hover:bg-white/10 rounded-xl transition-all">
-            <Image src="/menu.svg" alt="Menu" width={24} height={24} />
-          </button>
-          <button className="p-3 hover:bg-white/10 rounded-xl transition-all">
-            <Image src="/Chat.svg" alt="Chat" width={24} height={24} />
-          </button>
         </div>
+
+        {/* Home Indicator - Mobile Only */}
+        <div className="block md:hidden w-[134px] h-[5px] bg-white rounded-full mx-auto mb-2" />
       </div>
 
       <style jsx global>{`
