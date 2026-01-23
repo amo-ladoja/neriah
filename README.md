@@ -11,7 +11,7 @@ Neriah is a mobile-first web application (PWA) that extracts actionable items fr
 ### ✅ What's Working
 - Gmail OAuth integration with automatic token refresh
 - Claude AI extraction (tasks, receipts, meetings)
-- Background sync (manual + scheduled every 3 hours)
+- Background sync (manual + scheduled every 3 hours via GitHub Actions)
 - Receipt OCR processing (images + PDFs)
 - Calendar deep linking
 - Real-time dashboard updates
@@ -34,7 +34,8 @@ Neriah is a mobile-first web application (PWA) that extracts actionable items fr
 - A Supabase account with project created ([sign up here](https://supabase.com))
 - Google Cloud account with OAuth credentials configured
 - Anthropic API key for Claude AI ([get one here](https://console.anthropic.com))
-- Vercel account for deployment (optional for local dev)
+- Vercel account for deployment (Hobby/Free tier works!)
+- GitHub repository (for scheduled sync via GitHub Actions)
 
 ### Installation
 
@@ -72,6 +73,8 @@ Neriah is a mobile-first web application (PWA) that extracts actionable items fr
    CRON_SECRET=your-generated-secret
    ```
 
+   **Note**: The CRON_SECRET will also be used in GitHub Actions for scheduled sync.
+
 4. **Set up Supabase Storage**
 
    See **[SETUP_GUIDE.md](./SETUP_GUIDE.md)** for detailed instructions on:
@@ -88,7 +91,15 @@ Neriah is a mobile-first web application (PWA) that extracts actionable items fr
 
    Navigate to [http://localhost:3000](http://localhost:3000)
 
-7. **For Production Deployment**
+7. **Set up GitHub Actions for Scheduled Sync**
+
+   After deploying to Vercel, configure GitHub Actions to trigger background sync every 3 hours:
+
+   - Add repository secrets: `CRON_SECRET` and `VERCEL_APP_URL`
+   - Workflow file already exists at `.github/workflows/cron-sync.yml`
+   - See **[SETUP_GUIDE.md § 3](./SETUP_GUIDE.md#3-github-actions-cron-setup)** for detailed setup
+
+8. **For Production Deployment**
 
    Follow the complete setup guide: **[SETUP_GUIDE.md](./SETUP_GUIDE.md)**
 
