@@ -5,7 +5,7 @@ export const metadata: Metadata = {
   title: "Neriah - Your emails, turned into actions",
   description: "Sign in with Google. See what needs your attention. Act.",
   manifest: "/manifest.json",
-  themeColor: "#3B82F6",
+  themeColor: "#E8F401",
   viewport: {
     width: "device-width",
     initialScale: 1,
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   },
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent",
     title: "Neriah",
   },
 };
@@ -26,10 +26,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
+        <link rel="icon" href="/neriah_box.svg" type="image/svg+xml" />
+        <link rel="apple-touch-icon" href="/neriah_box.svg" />
       </head>
-      <body className="antialiased">
+      <body className="antialiased font-sans">
         {children}
       </body>
     </html>

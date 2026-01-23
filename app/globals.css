@@ -1,3 +1,84 @@
+/* Font Face Declarations - SFT Schrifted Sans */
+@font-face {
+  font-family: 'SFT Schrifted Sans';
+  src: url('/fonts/SFTSchriftedSansTRIAL-Regular.woff') format('woff');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SFT Schrifted Sans';
+  src: url('/fonts/SFTSchriftedSansTRIAL-Italic.woff') format('woff');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SFT Schrifted Sans';
+  src: url('/fonts/SFTSchriftedSansTRIAL-Medium.woff') format('woff');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SFT Schrifted Sans';
+  src: url('/fonts/SFTSchriftedSansTRIAL-MediumItalic.woff') format('woff');
+  font-weight: 500;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SFT Schrifted Sans';
+  src: url('/fonts/SFTSchriftedSansTRIAL-DemiBold.woff') format('woff');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SFT Schrifted Sans';
+  src: url('/fonts/SFTSchriftedSansTRIAL-DemiBoldItalic.woff') format('woff');
+  font-weight: 600;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SFT Schrifted Sans';
+  src: url('/fonts/SFTSchriftedSansTRIAL-Bold.woff') format('woff');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SFT Schrifted Sans';
+  src: url('/fonts/SFTSchriftedSansTRIAL-BoldItalic.woff') format('woff');
+  font-weight: 700;
+  font-style: italic;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SFT Schrifted Sans';
+  src: url('/fonts/SFTSchriftedSansTRIAL-Black.woff') format('woff');
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'SFT Schrifted Sans';
+  src: url('/fonts/SFTSchriftedSansTRIAL-BlackItalic.woff') format('woff');
+  font-weight: 900;
+  font-style: italic;
+  font-display: swap;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -67,5 +148,12 @@
   /* Touch-friendly tap targets from PRD (44px minimum) */
   .tap-target {
     @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Noise texture background effect */
+  .bg-noise {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 200px 200px;
   }
 }

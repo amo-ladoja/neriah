@@ -4,8 +4,8 @@
   "description": "Your emails, turned into actions. Sign in with Google. See what needs your attention. Act.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#3B82F6",
+  "background_color": "#060606",
+  "theme_color": "#E8F401",
   "orientation": "portrait",
   "icons": [
     {

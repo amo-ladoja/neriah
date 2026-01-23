@@ -54,3 +54,7 @@ public/worker-*.js.map
 *.swp
 *.swo
 *~
+SETUP_GOOGLE_OAUTH.md
+supabase/README.md
+supabase/schema.sql
+SETUP_GUIDE.md

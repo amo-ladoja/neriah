@@ -5,7 +5,10 @@ export type Profile = {
   email: string;
   name: string | null;
   avatar_url: string | null;
-  gmail_token: Record<string, any> | null;
+  gmail_access_token: string | null;
+  gmail_refresh_token: string | null;
+  gmail_token_expires_at: string | null;
+  initial_extraction_completed: boolean;
   sync_enabled: boolean;
   last_sync_at: string | null;
   created_at: string;
@@ -70,6 +73,7 @@ export type Item = {
   priority: ItemPriority;
   due_date: string | null;
   confidence: number | null;
+  extraction_notes: string | null;
 
   // Receipt-specific
   receipt_details: ReceiptDetails | null;

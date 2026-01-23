@@ -1,204 +1,554 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useState } from "react";
+import Image from "next/image";
+import { useItems } from "@/lib/hooks/useItems";
+import { markItemComplete, submitFeedback } from "@/lib/actions/items";
 import {
-  Mail,
-  CheckCircle,
-  Clock,
-  Receipt,
-  Calendar,
-  ThumbsUp,
-  ThumbsDown,
-  MoreVertical,
-} from "lucide-react";
-import { formatRelativeTime } from "@/lib/utils";
+  generateReplyLink,
+  generateMeetingLink,
+  openInNewTab,
+} from "@/lib/utils/gmail-links";
+import type { Database } from "@/lib/types/database";
 
-// Mock data - will be replaced with real data from Supabase
-const mockItems = [
-  {
-    id: "1",
-    title: "Reply to John about Q4 report",
-    category: "reply",
-    priority: "urgent",
-    senderName: "John Doe",
-    senderEmail: "john@company.com",
-    emailDate: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    confidence: 0.92,
-  },
-  {
-    id: "2",
-    title: "Review invoice from AWS",
-    category: "invoice",
-    priority: "normal",
-    senderName: "AWS",
-    senderEmail: "billing@aws.com",
-    emailDate: new Date(Date.now() - 5 * 60 * 60 * 1000).toISOString(),
-    confidence: 0.95,
-    receiptDetails: { vendor: "AWS", amount: 250.0, currency: "USD" },
-    receiptCategory: "software",
-  },
-  {
-    id: "3",
-    title: "Schedule meeting with Sarah for Q1 planning",
-    category: "meeting",
-    priority: "normal",
-    senderName: "Sarah Smith",
-    senderEmail: "sarah@company.com",
-    emailDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-    confidence: 0.88,
-  },
-];
+type Item = Database["public"]["Tables"]["items"]["Row"];
+type FilterType = "all" | "tasks" | "receipts" | "meetings";
 
-export default function DashboardPage() {
+// ============================================
+// Utility Components
+// ============================================
+
+const CircleDot = ({ color = "#ffffff" }: { color?: string }) => (
+  <div className="w-1 h-1 rounded-full" style={{ backgroundColor: color }} />
+);
+
+// ============================================
+// Tag Components
+// ============================================
+
+interface TagProps {
+  label: string;
+  variant?: "default" | "active";
+  onClick?: () => void;
+}
+
+const Tag = ({ label, variant = "default", onClick }: TagProps) => {
+  const isActive = variant === "active";
+
   return (
-    <div className="container mx-auto px-4 py-6 max-w-4xl">
+    <button
+      onClick={onClick}
+      className={`flex items-center justify-center px-1.5 py-0.5 rounded-xl text-xs font-medium tracking-[0.2px] leading-[1.67] transition-all ${
+        isActive
+          ? "bg-[#80d0ae] border border-[#80d0ae4d] text-[#030303cc]"
+          : "bg-[#fdfdfd26] border border-[#fdfdfd33]/40 text-[#fdfdfdcc] hover:bg-[#fdfdfd33]"
+      }`}
+    >
+      {label}
+    </button>
+  );
+};
+
+interface SmallTagProps {
+  label: string;
+  variant: "reply" | "urgent" | "receipt" | "meetings";
+}
+
+const SmallTag = ({ label, variant }: SmallTagProps) => {
+  const styles = {
+    reply: "bg-[#e8f40126] border-[#e8f4014d]",
+    urgent: "bg-[#80240b26] border-[#80240b4d]",
+    receipt: "bg-[#e8f40126] border-[#e8f4014d]",
+    meetings: "bg-[#e8f40126] border-[#e8f4014d]",
+  };
+
+  return (
+    <div
+      className={`flex items-center justify-center px-2 py-[2px] rounded text-[6px] font-normal tracking-[0.4px] leading-[1.33] border-[0.4px] ${styles[variant]} text-[#fdfdfdcc] uppercase`}
+    >
+      {label}
+    </div>
+  );
+};
+
+// ============================================
+// Button Components
+// ============================================
+
+interface ActionButtonProps {
+  label: string;
+  iconPath: string;
+  variant?: "primary" | "secondary";
+  onClick?: () => void;
+}
+
+const ActionButton = ({
+  label,
+  iconPath,
+  variant = "secondary",
+  onClick,
+}: ActionButtonProps) => {
+  const isPrimary = variant === "primary";
+
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center justify-center gap-1.5 px-2 py-0.5 rounded-xl text-[8px] tracking-[0.4px] leading-[2.5] cursor-pointer transition-all ${
+        isPrimary
+          ? "bg-[#e8f401] text-[#131313] font-bold hover:bg-[#e8f401]/90"
+          : "text-[#fdfdfd] font-normal border border-[#fdfdfd33] hover:bg-[#fdfdfd0d]"
+      }`}
+    >
+      <Image src={iconPath} alt={label} width={14} height={14} className="w-3.5 h-3.5" />
+      <span>{label}</span>
+    </button>
+  );
+};
+
+// ============================================
+// Task Card Component
+// ============================================
+
+interface TaskCardProps {
+  item: Item;
+  onReply?: () => void;
+  onViewReceipt?: () => void;
+  onSchedule?: () => void;
+  onDone?: () => void;
+  onThumbsUp?: () => void;
+  onThumbsDown?: () => void;
+}
+
+const TaskCard = ({
+  item,
+  onReply,
+  onViewReceipt,
+  onSchedule,
+  onDone,
+  onThumbsUp,
+  onThumbsDown,
+}: TaskCardProps) => {
+  const isReply = ["reply", "follow_up", "deadline", "review"].includes(item.category);
+  const isReceipt = item.category === "invoice";
+  const isMeeting = item.category === "meeting";
+
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return "";
+    return new Date(dateString)
+      .toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      })
+      .toUpperCase();
+  };
+
+  const formatTime = (dateString: string | null) => {
+    if (!dateString) return "";
+    return new Date(dateString).toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const getTags = () => {
+    const tags: { label: string; variant: "reply" | "urgent" | "receipt" | "meetings" }[] = [];
+
+    if (isReply) {
+      tags.push({ label: "REPLY NEEDED", variant: "reply" });
+    } else if (isReceipt) {
+      tags.push({ label: "RECEIPT", variant: "receipt" });
+    } else if (isMeeting) {
+      tags.push({ label: "MEETINGS", variant: "meetings" });
+    }
+
+    if (item.priority === "urgent") {
+      tags.push({ label: "URGENT", variant: "urgent" });
+    }
+
+    return tags;
+  };
+
+  const senderInitials = item.sender_name
+    ? item.sender_name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+    : "?";
+
+  return (
+    <div className="flex flex-col gap-2 p-4 rounded-2xl bg-[#fdfdfd05] border-[0.4px] border-[#fdfdfd33]/40 backdrop-blur-[10.5px] shadow-[0_4px_21px_2px_rgba(0,0,0,0.15)]">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
-          <p className="text-muted-foreground">
-            {mockItems.length} items need your attention
-          </p>
+      <div className="flex flex-col gap-2 w-full">
+        {/* Sender Info Row */}
+        <div className="flex justify-between items-start w-full">
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full bg-[#fdfdfd33] flex items-center justify-center flex-shrink-0">
+              <span className="text-[10px] font-semibold text-[#fdfdfdcc]">
+                {senderInitials}
+              </span>
+            </div>
+            <div className="flex flex-col gap-[-1px]">
+              <span className="text-[10px] font-medium text-[#fdfdfdcc] tracking-[0.4px] leading-[2]">
+                {item.sender_name || "Unknown"}
+              </span>
+              <span className="text-[8px] text-[#fdfdfd66] tracking-[0.4px] leading-[2.5]">
+                {item.sender_email}
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="text-[8px] font-medium text-[#fdfdfd99] tracking-[0.4px] leading-[2.5]">
+              {formatDate(item.email_date)}
+            </span>
+            <CircleDot color="#fdfdfd99" />
+            <span className="text-[8px] font-medium text-[#fdfdfd99] tracking-[0.4px] leading-[2.5]">
+              {formatTime(item.email_date)}
+            </span>
+          </div>
         </div>
 
-        <Button variant="outline" size="icon">
-          <MoreVertical className="w-5 h-5" />
-        </Button>
+        {/* Title */}
+        <p className="text-xs font-medium text-[#fdfdfdcc] tracking-[0.4px]">{item.title}</p>
       </div>
 
-      {/* Filter Tabs */}
-      <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 mb-6">
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="tasks">Tasks</TabsTrigger>
-          <TabsTrigger value="receipts">Receipts</TabsTrigger>
-          <TabsTrigger value="meetings">Meetings</TabsTrigger>
-        </TabsList>
+      {/* Content */}
+      {isReply && item.description && (
+        <div className="w-full">
+          <p className="text-[8px] text-[#fdfdfd99] tracking-[0.4px] leading-[1.375] line-clamp-2">
+            {item.description}
+          </p>
+        </div>
+      )}
 
-        <TabsContent value="all" className="space-y-4">
-          {mockItems.map((item) => (
-            <Card key={item.id} className="p-4">
-              <div className="flex items-start space-x-4">
-                {/* Sender Avatar */}
-                <Avatar className="mt-1">
-                  <AvatarImage src="" />
-                  <AvatarFallback>
-                    {item.senderName
-                      .split(" ")
-                      .map((n) => n[0])
-                      .join("")}
-                  </AvatarFallback>
-                </Avatar>
+      {isReceipt && item.receipt_details && (
+        <div className="flex flex-col gap-0 rounded-lg bg-[#13131366] p-3 border-[0.4px] border-[#fdfdfd4d] w-full">
+          <span className="text-lg text-[#fdfdfdcc] tracking-[0.4px] font-medium">
+            {item.receipt_details.currency || "₦"}
+            {item.receipt_details.amount?.toLocaleString() || "0.00"}
+          </span>
+          <div className="flex items-center gap-1">
+            <span className="text-[8px] font-medium text-[#fdfdfd99] tracking-[0.4px] leading-[2.5]">
+              {item.receipt_details.vendor}
+            </span>
+            <CircleDot color="#fdfdfd99" />
+            <span className="text-[8px] font-medium text-[#fdfdfd99] tracking-[0.4px] leading-[2.5]">
+              {item.receipt_details.invoiceNumber || "N/A"}
+            </span>
+          </div>
+        </div>
+      )}
 
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-foreground mb-1">
-                        {item.title}
-                      </h3>
-                      <div className="flex items-center space-x-2 text-sm text-muted-foreground">
-                        <span>{item.senderName}</span>
-                        <span>•</span>
-                        <span>{formatRelativeTime(item.emailDate)}</span>
-                      </div>
-                    </div>
-                  </div>
+      {isMeeting && item.meeting_details && (
+        <div className="flex flex-col gap-0 rounded-lg bg-[#13131366] p-3 border-[0.4px] border-[#fdfdfd4d] w-full">
+          <span className="text-lg text-[#fdfdfdcc] tracking-[0.4px] font-medium">
+            {item.meeting_details.topic || item.title}
+          </span>
+          <div className="flex items-center gap-1">
+            <span className="text-[8px] font-medium text-[#fdfdfd99] tracking-[0.4px] leading-[2.5]">
+              {item.meeting_details.duration || 30} minutes
+            </span>
+            <CircleDot color="#fdfdfd99" />
+            <span className="text-[8px] font-medium text-[#fdfdfd99] tracking-[0.4px] leading-[2.5]">
+              {item.meeting_details.attendees?.length || 0} attendees
+            </span>
+          </div>
+        </div>
+      )}
 
-                  {/* Badges */}
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    <Badge
-                      variant={
-                        item.priority === "urgent" ? "destructive" : "secondary"
-                      }
-                    >
-                      {item.priority}
-                    </Badge>
-                    <Badge variant="outline">{item.category}</Badge>
-                    {item.receiptCategory && (
-                      <Badge variant="secondary">{item.receiptCategory}</Badge>
-                    )}
-                  </div>
-
-                  {/* Receipt Details (if applicable) */}
-                  {item.receiptDetails && (
-                    <div className="text-sm text-muted-foreground mb-3">
-                      {item.receiptDetails.vendor} •{" "}
-                      {item.receiptDetails.currency}{" "}
-                      {item.receiptDetails.amount}
-                    </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="flex items-center space-x-2">
-                    {item.category === "reply" && (
-                      <Button size="sm" variant="default">
-                        <Mail className="w-4 h-4 mr-1" />
-                        Reply
-                      </Button>
-                    )}
-                    {item.category === "invoice" && (
-                      <Button size="sm" variant="default">
-                        <Receipt className="w-4 h-4 mr-1" />
-                        View Receipt
-                      </Button>
-                    )}
-                    {item.category === "meeting" && (
-                      <Button size="sm" variant="default">
-                        <Calendar className="w-4 h-4 mr-1" />
-                        Schedule
-                      </Button>
-                    )}
-                    <Button size="sm" variant="outline">
-                      <CheckCircle className="w-4 h-4 mr-1" />
-                      Done
-                    </Button>
-                    <Button size="sm" variant="ghost">
-                      <Clock className="w-4 h-4 mr-1" />
-                      Snooze
-                    </Button>
-                  </div>
-
-                  {/* Feedback */}
-                  <div className="flex items-center space-x-2 mt-3 pt-3 border-t">
-                    <span className="text-xs text-muted-foreground mr-2">
-                      Was this helpful?
-                    </span>
-                    <Button size="sm" variant="ghost" className="h-8 px-2">
-                      <ThumbsUp className="w-4 h-4" />
-                    </Button>
-                    <Button size="sm" variant="ghost" className="h-8 px-2">
-                      <ThumbsDown className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </Card>
+      {/* Tags & Confidence */}
+      <div className="flex justify-between items-center w-full pb-3 border-b border-b-[#fdfdfd66]/40">
+        <div className="flex items-center gap-2">
+          {getTags().map((tag, index) => (
+            <SmallTag key={index} label={tag.label} variant={tag.variant} />
           ))}
-        </TabsContent>
+        </div>
+        <div className="flex items-center gap-1">
+          <CircleDot color="#34a853" />
+          <span className="text-[8px] font-medium text-[#fdfdfd99] tracking-[0.4px] leading-[2.5]">
+            {Math.round((item.confidence || 0) * 100)}%
+          </span>
+        </div>
+      </div>
 
-        <TabsContent value="tasks">
-          <p className="text-center text-muted-foreground py-8">
-            Filter: Tasks only
-          </p>
-        </TabsContent>
+      {/* Actions */}
+      <div className="flex justify-between items-center w-full">
+        <div className="flex items-center gap-3">
+          {isReply && (
+            <ActionButton
+              label="Reply"
+              iconPath="/reply.svg"
+              variant="primary"
+              onClick={onReply}
+            />
+          )}
+          {isReceipt && (
+            <ActionButton
+              label="View Receipt"
+              iconPath="/Receipt.svg"
+              variant="primary"
+              onClick={onViewReceipt}
+            />
+          )}
+          {isMeeting && (
+            <ActionButton
+              label="Schedule"
+              iconPath="/schedule.svg"
+              variant="primary"
+              onClick={onSchedule}
+            />
+          )}
+          <ActionButton label="Snooze" iconPath="/snooze.svg" />
+          <ActionButton label="Done" iconPath="/done.svg" onClick={onDone} />
+        </div>
+        {!item.user_feedback && (
+          <div className="flex items-center gap-[21px]">
+            <button
+              onClick={onThumbsUp}
+              className="hover:opacity-70 transition-opacity"
+            >
+              <Image
+                src="/correct.svg"
+                alt="Thumbs up"
+                width={14}
+                height={14}
+                className="w-3.5 h-3.5"
+              />
+            </button>
+            <button
+              onClick={onThumbsDown}
+              className="hover:opacity-70 transition-opacity"
+            >
+              <Image
+                src="/incorrect.svg"
+                alt="Thumbs down"
+                width={14}
+                height={14}
+                className="w-3.5 h-3.5"
+              />
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
 
-        <TabsContent value="receipts">
-          <p className="text-center text-muted-foreground py-8">
-            Filter: Receipts only
-          </p>
-        </TabsContent>
+// ============================================
+// Main Dashboard Component
+// ============================================
 
-        <TabsContent value="meetings">
-          <p className="text-center text-muted-foreground py-8">
-            Filter: Meetings only
-          </p>
-        </TabsContent>
-      </Tabs>
+export default function Dashboard() {
+  const [activeFilter, setActiveFilter] = useState<FilterType>("all");
+  const { items, loading, error } = useItems(activeFilter);
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const handleSync = async () => {
+    setIsSyncing(true);
+    try {
+      await fetch("/api/sync", { method: "POST" });
+    } catch (error) {
+      console.error("Sync failed:", error);
+    } finally {
+      setTimeout(() => setIsSyncing(false), 2000);
+    }
+  };
+
+  const handleReply = (item: Item) => {
+    if (!item.sender_email || !item.title || !item.email_id) return;
+
+    const link = generateReplyLink({
+      sender_email: item.sender_email,
+      title: item.title,
+      email_id: item.email_id,
+    });
+    openInNewTab(link);
+  };
+
+  const handleScheduleMeeting = (item: Item) => {
+    if (!item.meeting_details) return;
+
+    const link = generateMeetingLink({
+      title: item.meeting_details.topic || item.title,
+      startTime: item.meeting_details.suggestedTimes?.[0],
+      endTime: undefined,
+      description: item.description || undefined,
+      attendees: item.meeting_details.attendees,
+    });
+    openInNewTab(link);
+  };
+
+  const handleMarkComplete = async (itemId: string) => {
+    const result = await markItemComplete(itemId);
+    if (result.error) {
+      console.error("Failed to mark complete:", result.error);
+    }
+  };
+
+  const handleFeedback = async (itemId: string, helpful: boolean) => {
+    const result = await submitFeedback(itemId, helpful);
+    if (result.error) {
+      console.error("Failed to submit feedback:", result.error);
+    }
+  };
+
+  return (
+    <div className="relative min-h-screen bg-[#1e1e1e] overflow-hidden pb-32">
+      {/* Background Gradient Effects */}
+      <div className="absolute w-[231px] h-[231px] rounded-full bg-[#0606064d] blur-[175px] -left-[71px] top-[473px]" />
+      <div className="absolute w-[231px] h-[231px] rounded-full bg-[#0606064d] blur-[175px] right-[139px] top-[156px]" />
+      <div className="absolute w-[285px] h-[285px] rounded-full bg-[#e8f40126] blur-[70px] right-[59px] bottom-[351px] mix-blend-lighten" />
+
+      {/* Main Container - Responsive */}
+      <div className="relative w-full max-w-md lg:max-w-lg xl:max-w-xl mx-auto px-2 lg:px-4">
+        {/* Logo */}
+        <div className="flex items-center justify-center pt-[71px] pb-[22.158752px]">
+          <Image
+            src="/neriah-white.svg"
+            alt="Neriah"
+            width={123}
+            height={35}
+            className="w-[123px] h-[35px]"
+          />
+        </div>
+
+        {/* Header Icons */}
+        <div className="absolute left-2 lg:left-4 top-16">
+          <button className="flex items-center justify-center p-[9.984px] rounded-full bg-[#fdfdfd1f] backdrop-blur-[11.375px] border-[1.2px] border-[#fdfdfd33] hover:bg-[#fdfdfd26] transition-all shadow-[0_0_8px_rgba(253,253,253,0.3)]">
+            <Image src="/User.svg" alt="Profile" width={18} height={18} />
+          </button>
+        </div>
+
+        <div className="absolute right-2 lg:right-4 top-16">
+          <button className="flex items-center justify-center p-[9.984px] rounded-full bg-[#fdfdfd1f] backdrop-blur-[11.375px] border-[1.2px] border-[#fdfdfd33] hover:bg-[#fdfdfd26] transition-all shadow-[0_0_8px_rgba(253,253,253,0.3)]">
+            <Image src="/search.svg" alt="Search" width={18} height={18} />
+          </button>
+        </div>
+
+        {/* Main Content */}
+        <div className="flex flex-col gap-4 w-full">
+          {/* Filter Section */}
+          <div className="flex flex-col gap-[11.2px] w-full">
+            {/* Filter Tabs */}
+            <div className="flex items-center gap-[11.6886px] overflow-x-auto no-scrollbar pb-1">
+              <Tag
+                label="All"
+                variant={activeFilter === "all" ? "active" : "default"}
+                onClick={() => setActiveFilter("all")}
+              />
+              <Tag
+                label="Tasks"
+                variant={activeFilter === "tasks" ? "active" : "default"}
+                onClick={() => setActiveFilter("tasks")}
+              />
+              <Tag
+                label="Receipts"
+                variant={activeFilter === "receipts" ? "active" : "default"}
+                onClick={() => setActiveFilter("receipts")}
+              />
+              <Tag
+                label="Meetings"
+                variant={activeFilter === "meetings" ? "active" : "default"}
+                onClick={() => setActiveFilter("meetings")}
+              />
+            </div>
+
+            {/* Status Bar */}
+            <div className="flex justify-between items-center pl-1 pr-1 w-full">
+              <div className="flex items-center gap-1">
+                <span className="text-sm text-[#fdfdfd] tracking-[0.4px] leading-[1.67] font-medium">
+                  {items.length}
+                </span>
+                <span className="text-sm font-medium text-[#fdfdfd99] tracking-[0.4px] leading-[1.67]">
+                  items need attention
+                </span>
+              </div>
+              <button
+                onClick={handleSync}
+                disabled={isSyncing}
+                className="flex items-center gap-1.5 cursor-pointer hover:opacity-70 transition-opacity disabled:opacity-50"
+              >
+                <Image
+                  src="/snooze.svg"
+                  alt="Sync"
+                  width={12}
+                  height={12}
+                  className={isSyncing ? "animate-spin" : ""}
+                />
+                <span className="text-sm font-medium text-[#fdfdfd99] tracking-[0.4px] leading-[1.67]">
+                  sync now
+                </span>
+              </button>
+            </div>
+          </div>
+
+          {/* Task Cards */}
+          <div className="flex flex-col gap-4 w-full">
+            {loading && (
+              <div className="flex items-center justify-center py-12">
+                <div className="w-8 h-8 border-2 border-[#e8f401] border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            )}
+
+            {error && (
+              <div className="text-center py-12">
+                <p className="text-[#fdfdfd99] text-sm">{error}</p>
+              </div>
+            )}
+
+            {!loading && !error && items.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-[#fdfdfd99] text-sm">No items to display</p>
+              </div>
+            )}
+
+            {!loading &&
+              !error &&
+              items.map((item) => (
+                <TaskCard
+                  key={item.id}
+                  item={item}
+                  onReply={() => handleReply(item)}
+                  onViewReceipt={() => {
+                    /* TODO: Implement receipt viewer */
+                  }}
+                  onSchedule={() => handleScheduleMeeting(item)}
+                  onDone={() => handleMarkComplete(item.id)}
+                  onThumbsUp={() => handleFeedback(item.id, true)}
+                  onThumbsDown={() => handleFeedback(item.id, false)}
+                />
+              ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Navigation - Fixed */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#13131333] backdrop-blur-[17.5px] border-t-[0.4px] border-t-[#fdfdfd33]">
+        <div className="w-full max-w-md lg:max-w-lg xl:max-w-xl mx-auto px-6 py-6">
+          <div className="flex justify-center items-center gap-40">
+            <button className="hover:opacity-70 transition-opacity">
+              <Image src="/menu.svg" alt="Menu" width={24} height={24} />
+            </button>
+            <button className="hover:opacity-70 transition-opacity">
+              <Image src="/Chat.svg" alt="Chat" width={24} height={24} />
+            </button>
+          </div>
+        </div>
+
+        {/* Home Indicator - Mobile Only */}
+        <div className="block md:hidden w-[134px] h-[5px] bg-white rounded-full mx-auto mb-2" />
+      </div>
+
+      <style jsx global>{`
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
     </div>
   );
 }

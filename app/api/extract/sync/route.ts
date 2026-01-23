@@ -1,0 +1,286 @@
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
+import {
+  fetchRecentEmails,
+  parseEmailForExtraction,
+} from "@/lib/gmail/client";
+import { extractFromEmail, filterByConfidence } from "@/lib/ai/claude";
+
+/**
+ * Manual Sync Endpoint
+ * POST /api/extract/sync
+ *
+ * Allows users to manually trigger a sync to fetch new emails
+ * - Fetches emails since last sync
+ * - Extracts actionable items using Claude
+ * - Stores new items in Supabase
+ * - Prevents duplicates by checking email_id
+ */
+
+export async function POST(request: NextRequest) {
+  try {
+    const supabase = await createClient();
+
+    // Get current user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    console.log(`[Sync] Starting sync for user: ${user.email}`);
+
+    // Check if user has completed initial extraction
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("initial_extraction_completed, last_sync_at")
+      .eq("id", user.id)
+      .single();
+
+    if (!profile?.initial_extraction_completed) {
+      return NextResponse.json(
+        { error: "Initial extraction not completed. Please complete onboarding first." },
+        { status: 400 }
+      );
+    }
+
+    // Create sync log
+    const { data: syncLog } = await supabase
+      .from("sync_logs")
+      .insert({
+        user_id: user.id,
+        started_at: new Date().toISOString(),
+        emails_processed: 0,
+        items_extracted: 0,
+        status: "running",
+      })
+      .select()
+      .single();
+
+    if (!syncLog) {
+      throw new Error("Failed to create sync log");
+    }
+
+    try {
+      // Calculate days since last sync (default to 1 day)
+      const daysSinceLastSync = profile.last_sync_at
+        ? Math.ceil((Date.now() - new Date(profile.last_sync_at).getTime()) / (1000 * 60 * 60 * 24))
+        : 1;
+
+      // Limit to max 7 days to avoid overwhelming the system
+      const daysToFetch = Math.min(daysSinceLastSync, 7);
+
+      console.log(`[Sync] Fetching emails from last ${daysToFetch} day(s)`);
+
+      // Step 1: Fetch emails from Gmail
+      const gmailMessages = await fetchRecentEmails(user.id, daysToFetch);
+      console.log(`[Sync] Found ${gmailMessages.length} emails`);
+
+      if (gmailMessages.length === 0) {
+        // No new emails - update sync log and return
+        await supabase
+          .from("sync_logs")
+          .update({
+            status: "success",
+            completed_at: new Date().toISOString(),
+            emails_processed: 0,
+            items_extracted: 0,
+          })
+          .eq("id", syncLog.id);
+
+        await supabase
+          .from("profiles")
+          .update({ last_sync_at: new Date().toISOString() })
+          .eq("id", user.id);
+
+        return NextResponse.json({
+          success: true,
+          message: "No new emails found",
+          itemsExtracted: 0,
+        });
+      }
+
+      // Step 2: Parse emails for extraction
+      console.log("[Sync] Parsing emails...");
+      const parsedEmails = gmailMessages.map(parseEmailForExtraction);
+
+      // Step 3: Extract items using Claude AI (batch processing)
+      console.log("[Sync] Extracting actionable items with Claude...");
+      const extractions = await Promise.all(
+        parsedEmails.map((email) => extractFromEmail(email))
+      );
+
+      // Step 4: Flatten and filter results
+      const allItems = extractions
+        .flatMap((extraction) => {
+          if (!extraction) return [];
+          return extraction.items;
+        })
+        .filter((item) => item !== null);
+
+      // Filter by confidence (>= 0.7)
+      const filteredItems = filterByConfidence(allItems, 0.7);
+
+      console.log(
+        `[Sync] Filtered ${filteredItems.length} items (from ${allItems.length} total)`
+      );
+
+      // Step 5: Check for existing items to prevent duplicates
+      const { data: existingItems } = await supabase
+        .from("items")
+        .select("email_id")
+        .eq("user_id", user.id)
+        .in(
+          "email_id",
+          parsedEmails.map((e) => e.messageId)
+        );
+
+      const existingEmailIds = new Set(
+        existingItems?.map((item) => item.email_id) || []
+      );
+
+      // Step 6: Store new items in database
+      const itemsToInsert = [];
+
+      for (let i = 0; i < filteredItems.length; i++) {
+        const item = filteredItems[i];
+        const email = parsedEmails[i];
+
+        // Skip if already exists
+        if (existingEmailIds.has(email.messageId)) {
+          console.log(`[Sync] Skipping duplicate email: ${email.messageId}`);
+          continue;
+        }
+
+        const senderName = email.from.match(/(.*?)\s*</)?.[1] || email.from;
+        const senderEmail =
+          email.from.match(/<(.+)>/)?.[1] || email.from;
+
+        const extraction = extractions[i];
+        if (!extraction) continue;
+
+        // Base item data
+        const itemData: any = {
+          user_id: user.id,
+          email_id: email.messageId,
+          sender_email: senderEmail,
+          sender_name: senderName || senderEmail,
+          email_subject: email.subject,
+          email_snippet: email.snippet,
+          email_date: email.internalDate.toISOString(),
+          has_attachment: email.attachments.length > 0,
+          attachment_ids: email.attachments.map((a) => a.filename),
+          status: "active",
+          confidence: item.confidence,
+          extraction_notes: extraction.summary,
+        };
+
+        // Type-specific fields
+        if (item.type === "task") {
+          itemData.category = item.category;
+          itemData.title = item.title;
+          itemData.description = item.description;
+          itemData.priority = item.priority;
+        } else if (item.type === "receipt") {
+          itemData.category = "invoice";
+          itemData.title = `Receipt from ${item.vendor}`;
+          itemData.description = `${item.currency} ${item.amount}`;
+          itemData.receipt_category = item.category;
+          itemData.receipt_details = {
+            vendor: item.vendor,
+            amount: item.amount,
+            currency: item.currency,
+            date: item.date,
+            invoiceNumber: item.invoiceNumber,
+          };
+          if (item.invoiceNumber) {
+            itemData.extraction_notes = `${extraction.summary} | Invoice: ${item.invoiceNumber}`;
+          }
+        } else if (item.type === "meeting") {
+          itemData.category = "meeting";
+          itemData.title = item.title;
+          itemData.description = item.description;
+          itemData.priority = "normal";
+          itemData.meeting_details = {
+            attendees: item.attendees || [],
+            suggestedTimes: item.dateTime ? [item.dateTime] : [],
+            duration: item.duration || 60,
+            location: "",
+            topic: item.title,
+          };
+        }
+
+        itemsToInsert.push(itemData);
+      }
+
+      // Insert all new items
+      let insertedCount = 0;
+      if (itemsToInsert.length > 0) {
+        const { error: insertError } = await supabase
+          .from("items")
+          .insert(itemsToInsert);
+
+        if (insertError) {
+          console.error("[Sync] Error inserting items:", insertError);
+          throw insertError;
+        }
+
+        insertedCount = itemsToInsert.length;
+        console.log(`[Sync] Inserted ${insertedCount} new items`);
+      } else {
+        console.log("[Sync] No new items to insert (all were duplicates)");
+      }
+
+      // Step 7: Update sync log
+      await supabase
+        .from("sync_logs")
+        .update({
+          status: "success",
+          completed_at: new Date().toISOString(),
+          emails_processed: gmailMessages.length,
+          items_extracted: insertedCount,
+        })
+        .eq("id", syncLog.id);
+
+      // Update profile last sync time
+      await supabase
+        .from("profiles")
+        .update({ last_sync_at: new Date().toISOString() })
+        .eq("id", user.id);
+
+      console.log(`[Sync] Sync complete for user: ${user.email}`);
+
+      return NextResponse.json({
+        success: true,
+        message: `Successfully processed ${gmailMessages.length} emails`,
+        itemsExtracted: insertedCount,
+        emailsProcessed: gmailMessages.length,
+      });
+    } catch (error) {
+      // Update sync log with error
+      await supabase
+        .from("sync_logs")
+        .update({
+          status: "failed",
+          completed_at: new Date().toISOString(),
+          error_message:
+            error instanceof Error ? error.message : "Unknown error",
+        })
+        .eq("id", syncLog.id);
+
+      throw error;
+    }
+  } catch (error) {
+    console.error("[Sync] Error:", error);
+    return NextResponse.json(
+      {
+        error: "Sync failed",
+        message: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 }
+    );
+  }
+}
