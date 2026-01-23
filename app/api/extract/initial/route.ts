@@ -48,20 +48,25 @@ export async function POST(request: NextRequest) {
     }
 
     // Create sync log
-    const { data: syncLog } = await supabase
+    const { data: syncLog, error: syncLogError } = await supabase
       .from("sync_logs")
       .insert({
         user_id: user.id,
         started_at: new Date().toISOString(),
+        completed_at: null,
         emails_processed: 0,
         items_extracted: 0,
         status: "running",
+        error_message: null,
       })
       .select()
       .single();
 
-    if (!syncLog) {
-      throw new Error("Failed to create sync log");
+    if (!syncLog || syncLogError) {
+      console.error("[Extract Initial] Failed to create sync log:", syncLogError);
+      throw new Error(
+        `Failed to create sync log: ${syncLogError?.message || "Unknown error"}`
+      );
     }
 
     try {
@@ -73,7 +78,7 @@ export async function POST(request: NextRequest) {
       // Update sync log
       await supabase
         .from("sync_logs")
-        .update({ emails_fetched: gmailMessages.length })
+        .update({ emails_processed: gmailMessages.length })
         .eq("id", syncLog.id);
 
       // Step 2: Parse emails for extraction
