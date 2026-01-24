@@ -19,6 +19,21 @@ import { extractFromEmail, filterByConfidence } from "@/lib/ai/claude";
  * Security: Vercel Cron automatically includes auth headers
  */
 
+// Helper function to normalize priority values to match database enum
+function normalizePriority(priority: string): "urgent" | "normal" | "low" {
+  const normalizedPriority = priority.toLowerCase();
+
+  // Map common variations to valid enum values
+  if (normalizedPriority === "high" || normalizedPriority === "urgent") {
+    return "urgent";
+  }
+  if (normalizedPriority === "medium" || normalizedPriority === "normal") {
+    return "normal";
+  }
+  // Default to normal for any other value
+  return "normal";
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Verify cron secret (optional extra security)
@@ -83,10 +98,14 @@ export async function POST(request: NextRequest) {
           .from("sync_logs")
           .insert({
             user_id: profile.id,
+            sync_type: "scheduled",
             started_at: new Date().toISOString(),
+            completed_at: null,
             emails_processed: 0,
-            items_extracted: 0,
+            items_created: 0,
+            items_updated: 0,
             status: "running",
+            error_message: null,
           })
           .select()
           .single();
@@ -116,7 +135,7 @@ export async function POST(request: NextRequest) {
               status: "success",
               completed_at: new Date().toISOString(),
               emails_processed: 0,
-              items_extracted: 0,
+              items_created: 0,
             })
             .eq("id", syncLog.id);
 
@@ -190,7 +209,7 @@ export async function POST(request: NextRequest) {
             email_date: email.internalDate.toISOString(),
             has_attachment: email.attachments.length > 0,
             attachment_ids: email.attachments.map((a) => a.filename),
-            status: "active",
+            status: "pending",
             confidence: item.confidence,
             extraction_notes: extraction.summary,
           };
@@ -200,7 +219,7 @@ export async function POST(request: NextRequest) {
             itemData.category = item.category;
             itemData.title = item.title;
             itemData.description = item.description;
-            itemData.priority = item.priority;
+            itemData.priority = normalizePriority(item.priority);
           } else if (item.type === "receipt") {
             itemData.category = "invoice";
             itemData.title = `Receipt from ${item.vendor}`;
@@ -251,7 +270,7 @@ export async function POST(request: NextRequest) {
             status: "success",
             completed_at: new Date().toISOString(),
             emails_processed: gmailMessages.length,
-            items_extracted: insertedCount,
+            items_created: insertedCount,
           })
           .eq("id", syncLog.id);
 

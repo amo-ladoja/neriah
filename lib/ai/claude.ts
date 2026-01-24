@@ -13,7 +13,7 @@ export interface ExtractedTask {
   type: "task";
   title: string;
   description: string;
-  priority: "low" | "medium" | "high" | "urgent";
+  priority: "low" | "normal" | "urgent";
   category: "reply" | "follow_up" | "deadline" | "action_required";
   confidence: number; // 0.0 to 1.0
 }
@@ -54,94 +54,23 @@ export interface ExtractionResult {
   processingNotes?: string;
 }
 
-const EXTRACTION_PROMPT = `You are an AI assistant that extracts actionable items from emails. Your job is to analyze an email and identify:
+const EXTRACTION_PROMPT = `Extract actionable items from this email. Return JSON only.
 
-1. **Tasks**: Things that require action (reply needed, follow-ups, deadlines, action items)
-2. **Receipts**: Invoices, purchase confirmations, payment receipts
-3. **Meetings**: Meeting requests, calendar invites, scheduled calls
+Types:
+1. Task (reply/follow-up/deadline/action_required) - priority: urgent/normal/low
+2. Receipt (vendor, amount, currency, date, invoiceNumber) - category: groceries/software/hardware/dining/travel/utilities/other
+3. Meeting (title, dateTime ISO format, duration mins, attendees emails)
 
-For each email, extract ALL actionable items and return them in a structured JSON format.
+Rules:
+- Only extract clear actionable items
+- Skip spam/newsletters/promos
+- Confidence: 0.9-1.0 (clear), 0.7-0.89 (good), 0.5-0.69 (moderate)
+- Use ONLY these priority values: "urgent", "normal", or "low"
 
-## Task Extraction Rules:
-- Extract items that need a response or action
-- Priority levels:
-  - "urgent": Explicit urgency mentioned, immediate response needed
-  - "high": Time-sensitive or from important contacts
-  - "medium": Regular action items
-  - "low": FYIs that might need eventual action
+Output format:
+{"items": [{"type": "task", "title": "...", "description": "...", "priority": "normal", "category": "reply", "confidence": 0.9}], "summary": "Brief summary"}
 
-- Categories:
-  - "reply": Needs a response/reply
-  - "follow_up": Needs follow-up action
-  - "deadline": Has a specific deadline
-  - "action_required": Other action needed
-
-## Receipt Extraction Rules:
-- Look for: invoices, purchase confirmations, payment receipts
-- Extract: vendor name, amount, currency, date, invoice number
-- Categories: groceries, software, hardware, dining, travel, utilities, other
-- Be precise with amounts (use numbers, not strings)
-
-## Meeting Extraction Rules:
-- Look for: meeting requests, calendar invites, scheduled calls
-- Extract: title, date/time, duration, attendees
-- Convert times to ISO format
-- List attendee email addresses
-
-## Confidence Scoring:
-- 0.9-1.0: Very confident, clear and explicit
-- 0.7-0.89: Confident, good indicators
-- 0.5-0.69: Moderate, some ambiguity
-- Below 0.5: Low confidence, might be false positive
-
-## Output Format:
-Return ONLY a valid JSON object with this structure:
-{
-  "items": [
-    {
-      "type": "task",
-      "title": "Brief title",
-      "description": "Detailed description",
-      "priority": "high",
-      "category": "reply",
-      "confidence": 0.9
-    },
-    {
-      "type": "receipt",
-      "vendor": "Company Name",
-      "amount": 99.99,
-      "currency": "USD",
-      "date": "2026-01-22",
-      "category": "software",
-      "invoiceNumber": "INV-12345",
-      "confidence": 0.95
-    },
-    {
-      "type": "meeting",
-      "title": "Project sync",
-      "dateTime": "2026-01-25T14:00:00Z",
-      "duration": 30,
-      "attendees": ["person@example.com"],
-      "description": "Weekly project update",
-      "confidence": 0.85
-    }
-  ],
-  "summary": "Brief summary of what was extracted",
-  "processingNotes": "Optional notes about extraction quality or ambiguities"
-}
-
-If an email has no actionable items, return:
-{
-  "items": [],
-  "summary": "No actionable items found",
-  "processingNotes": "This appears to be informational only"
-}
-
-Remember:
-- Be conservative - only extract clear, actionable items
-- Don't extract spam, newsletters, or promotional content
-- Use confidence scores to indicate certainty
-- Return ONLY valid JSON, no markdown or extra text`;
+Return empty array if no items: {"items": [], "summary": "No actionable items"}`;
 
 /**
  * Extract actionable items from an email using Claude AI
@@ -156,25 +85,25 @@ export async function extractFromEmail(email: {
 }): Promise<ExtractionResult> {
   console.log(`[Claude] Extracting from email: ${email.subject}`);
 
-  // Build email context
+  // Truncate email body to reduce token usage (max 1000 chars)
+  const truncatedBody = email.body.length > 1000
+    ? email.body.substring(0, 1000) + "..."
+    : email.body;
+
+  // Build email context (kept minimal to reduce tokens)
   const emailContext = `
 From: ${email.from}
 Subject: ${email.subject}
 Date: ${email.date}
-Has Attachments: ${email.hasAttachments}
-${
-  email.attachments && email.attachments.length > 0
-    ? `Attachments: ${email.attachments.map((a) => `${a.filename} (${a.mimeType})`).join(", ")}`
-    : ""
-}
+${email.hasAttachments ? `Attachments: ${email.attachments?.map((a) => a.filename).join(", ")}` : ""}
 
 Body:
-${email.body}
+${truncatedBody}
 `.trim();
 
   try {
     const response = await anthropic.messages.create({
-      model: "claude-3-5-sonnet-20241022",
+      model: "claude-sonnet-4-5",
       max_tokens: 2000,
       temperature: 0.3, // Lower temperature for more consistent extraction
       messages: [
@@ -220,6 +149,7 @@ ${email.body}
 
 /**
  * Extract from multiple emails in batch
+ * Rate limited to stay within Anthropic API limits (50 requests/minute)
  */
 export async function extractFromEmails(
   emails: Array<{
@@ -233,20 +163,21 @@ export async function extractFromEmails(
 ): Promise<ExtractionResult[]> {
   console.log(`[Claude] Batch extracting from ${emails.length} emails`);
 
-  // Process in parallel with rate limiting (max 5 concurrent)
-  const batchSize = 5;
   const results: ExtractionResult[] = [];
 
-  for (let i = 0; i < emails.length; i += batchSize) {
-    const batch = emails.slice(i, i + batchSize);
-    const batchResults = await Promise.all(
-      batch.map((email) => extractFromEmail(email))
-    );
-    results.push(...batchResults);
+  // Process sequentially with 12 second delay to stay under token rate limits
+  // 30K tokens/min means we need to spread requests to avoid hitting token cap
+  for (let i = 0; i < emails.length; i++) {
+    const email = emails[i];
+    console.log(`[Claude] Processing email ${i + 1}/${emails.length}: ${email.subject}`);
 
-    // Small delay between batches to avoid rate limits
-    if (i + batchSize < emails.length) {
-      await new Promise((resolve) => setTimeout(resolve, 100));
+    const result = await extractFromEmail(email);
+    results.push(result);
+
+    // Wait 12 seconds between requests to stay under token rate limit (30K tokens/min)
+    if (i < emails.length - 1) {
+      console.log(`[Claude] Waiting 12 seconds before next request...`);
+      await new Promise((resolve) => setTimeout(resolve, 12000));
     }
   }
 

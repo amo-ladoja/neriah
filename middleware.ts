@@ -46,10 +46,25 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  // Redirect to dashboard if authenticated and trying to access landing
+  // Redirect authenticated users from landing page
   if (request.nextUrl.pathname === "/" && user) {
+    // Check if initial extraction is completed
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("initial_extraction_completed")
+      .eq("id", user.id)
+      .single();
+
     const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
+
+    // New users (extraction not done) go to extracting page
+    if (!profile?.initial_extraction_completed) {
+      url.pathname = "/extracting";
+    } else {
+      // Returning users (extraction done) go to dashboard
+      url.pathname = "/dashboard";
+    }
+
     return NextResponse.redirect(url);
   }
 
