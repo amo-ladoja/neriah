@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 
@@ -23,7 +23,12 @@ export default function ExtractingPage() {
     { id: 4, label: "Fetching\nattachments", status: "pending" },
   ]);
 
+  const extractionStarted = useRef(false);
+
   useEffect(() => {
+    if (extractionStarted.current) return;
+    extractionStarted.current = true;
+
     // Start actual extraction
     const startExtraction = async () => {
       try {
