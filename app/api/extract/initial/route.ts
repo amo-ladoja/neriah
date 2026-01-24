@@ -17,6 +17,21 @@ import { extractFromEmail, filterByConfidence } from "@/lib/ai/claude";
  * - Updates user's initial_extraction_completed flag
  */
 
+// Helper function to normalize priority values to match database enum
+function normalizePriority(priority: string): "urgent" | "normal" | "low" {
+  const normalizedPriority = priority.toLowerCase();
+
+  // Map common variations to valid enum values
+  if (normalizedPriority === "high" || normalizedPriority === "urgent") {
+    return "urgent";
+  }
+  if (normalizedPriority === "medium" || normalizedPriority === "normal") {
+    return "normal";
+  }
+  // Default to normal for any other value
+  return "normal";
+}
+
 export async function POST(request: NextRequest) {
   try {
     const supabase = await createClient();
@@ -52,10 +67,12 @@ export async function POST(request: NextRequest) {
       .from("sync_logs")
       .insert({
         user_id: user.id,
+        sync_type: "initial",
         started_at: new Date().toISOString(),
         completed_at: null,
         emails_processed: 0,
-        items_extracted: 0,
+        items_created: 0,
+        items_updated: 0,
         status: "running",
         error_message: null,
       })
@@ -70,28 +87,34 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      // Step 1: Fetch emails from Gmail (last 24 hours)
+      // Step 1: Fetch emails from Gmail (last 1 day, limit to 5 emails to avoid rate limits)
       console.log("[Extract Initial] Fetching emails from Gmail...");
       const gmailMessages = await fetchRecentEmails(user.id, 1);
-      console.log(`[Extract Initial] Found ${gmailMessages.length} emails`);
+
+      // Limit to 5 emails to stay within API token limits
+      const limitedMessages = gmailMessages.slice(0, 5);
+      console.log(`[Extract Initial] Found ${gmailMessages.length} emails, processing ${limitedMessages.length}`);
 
       // Update sync log
       await supabase
         .from("sync_logs")
-        .update({ emails_processed: gmailMessages.length })
+        .update({ emails_processed: limitedMessages.length })
         .eq("id", syncLog.id);
 
       // Step 2: Parse emails for extraction
-      const parsedEmails = gmailMessages.map((msg) =>
+      const parsedEmails = limitedMessages.map((msg) =>
         parseEmailForExtraction(msg)
       );
 
-      // Step 3: Extract actionable items using Claude
+      // Step 3: Extract actionable items using Claude (with rate limiting)
       console.log("[Extract Initial] Extracting items with Claude AI...");
       let totalItemsCreated = 0;
 
-      for (const email of parsedEmails) {
+      for (let i = 0; i < parsedEmails.length; i++) {
+        const email = parsedEmails[i];
         try {
+          console.log(`[Extract Initial] Processing email ${i + 1}/${parsedEmails.length}: "${email.subject}"`);
+
           // Extract from email
           const extraction = await extractFromEmail({
             from: email.from,
@@ -102,10 +125,10 @@ export async function POST(request: NextRequest) {
             attachments: email.attachments,
           });
 
-          // Filter by confidence (only keep items >= 0.7)
+          // Filter by confidence (lowered to 0.5 for testing)
           const highConfidenceItems = filterByConfidence(
             extraction.items,
-            0.7
+            0.5
           );
 
           console.log(
@@ -130,6 +153,7 @@ export async function POST(request: NextRequest) {
                 sender_email: senderEmail,
                 sender_name: senderName || senderEmail,
                 email_date: email.internalDate.toISOString(),
+                status: "pending",
                 confidence: item.confidence,
                 extraction_notes: extraction.summary,
               };
@@ -139,7 +163,7 @@ export async function POST(request: NextRequest) {
                 itemData.category = item.category; // reply, follow_up, deadline, review
                 itemData.title = item.title;
                 itemData.description = item.description;
-                itemData.priority = item.priority;
+                itemData.priority = normalizePriority(item.priority);
               } else if (item.type === "receipt") {
                 itemData.category = "invoice"; // All receipts have category "invoice"
                 itemData.title = `Receipt from ${item.vendor}`;
@@ -159,7 +183,7 @@ export async function POST(request: NextRequest) {
                 itemData.category = "meeting"; // All meetings have category "meeting"
                 itemData.title = item.title;
                 itemData.description = item.description;
-                itemData.priority = "medium"; // Default priority for meetings
+                itemData.priority = "normal"; // Default priority for meetings
                 itemData.meeting_details = {
                   attendees: item.attendees || [],
                   suggestedTimes: item.dateTime ? [item.dateTime] : [],
@@ -193,6 +217,13 @@ export async function POST(request: NextRequest) {
             `[Extract Initial] Error extracting from email "${email.subject}":`,
             emailError
           );
+        }
+
+        // Add delay between emails to respect both request and token rate limits
+        // 30K tokens/min ÷ 5 emails = spread across 60 seconds = 12s between emails
+        if (i < parsedEmails.length - 1) {
+          console.log(`[Extract Initial] Waiting 12 seconds before next email...`);
+          await new Promise((resolve) => setTimeout(resolve, 12000));
         }
       }
 

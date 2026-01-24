@@ -25,7 +25,7 @@ export type ItemCategory =
 
 export type ItemPriority = "urgent" | "normal" | "low";
 
-export type ItemStatus = "active" | "completed" | "snoozed" | "deleted";
+export type ItemStatus = "pending" | "completed" | "snoozed" | "deleted";
 
 export type ReceiptCategory =
   | "software"
@@ -110,10 +110,13 @@ export type Item = {
 export type SyncLog = {
   id: string;
   user_id: string;
+  sync_type: string;
   started_at: string;
   completed_at: string | null;
+  emails_fetched: number | null;
   emails_processed: number;
-  items_extracted: number;
+  items_created: number;
+  items_updated: number;
   status: "running" | "success" | "failed";
   error_message: string | null;
   created_at: string;

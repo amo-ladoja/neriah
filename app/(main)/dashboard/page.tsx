@@ -19,7 +19,7 @@ type FilterType = "all" | "tasks" | "receipts" | "meetings";
 // ============================================
 
 const CircleDot = ({ color = "#ffffff" }: { color?: string }) => (
-  <div className="w-1 h-1 rounded-full" style={{ backgroundColor: color }} />
+  <div className="w-[4px] h-[4px] rounded-full" style={{ backgroundColor: color }} />
 );
 
 // ============================================
@@ -64,7 +64,7 @@ const SmallTag = ({ label, variant }: SmallTagProps) => {
 
   return (
     <div
-      className={`flex items-center justify-center px-2 py-[2px] rounded text-[6px] font-normal tracking-[0.4px] leading-[1.33] border-[0.4px] ${styles[variant]} text-[#fdfdfdcc] uppercase`}
+      className={`flex items-center justify-center px-1 pt-[3px] pb-[2px] rounded text-[6px] font-semibold tracking-[0.4px] leading-[1.33] border-[0.4px] ${styles[variant]} text-[#fdfdfdcc] uppercase`}
     >
       {label}
     </div>
@@ -93,13 +93,21 @@ const ActionButton = ({
   return (
     <button
       onClick={onClick}
-      className={`flex items-center justify-center gap-1.5 px-2 py-0.5 rounded-xl text-[8px] tracking-[0.4px] leading-[2.5] cursor-pointer transition-all ${
+      className={`relative overflow-hidden flex items-center justify-center gap-[6px] px-1 py-[4px] rounded-xl text-[8px] tracking-[0.4px] leading-[1.5] cursor-pointer transition-all ${
         isPrimary
           ? "bg-[#e8f401] text-[#131313] font-bold hover:bg-[#e8f401]/90"
-          : "text-[#fdfdfd] font-normal border border-[#fdfdfd33] hover:bg-[#fdfdfd0d]"
+          : "bg-transparent text-[#fdfdfd] font-semibold"
       }`}
     >
-      <Image src={iconPath} alt={label} width={14} height={14} className="w-3.5 h-3.5" />
+      <div className="absolute inset-0 rounded-xl p-[0.4px] pointer-events-none opacity-[0.4]"
+        style={{
+          background: 'linear-gradient(119deg, rgba(253,253,253,0.6), rgba(202,202,202,0.6) 57%, rgba(151,151,151,0.6))',
+          WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+          WebkitMaskComposite: 'xor',
+          maskComposite: 'exclude'
+        }}
+      />
+      <Image src={iconPath} alt={label} width={14} height={14} className="w-[14px] h-[14px]" />
       <span>{label}</span>
     </button>
   );
@@ -170,30 +178,35 @@ const TaskCard = ({
   };
 
   const senderInitials = item.sender_name
-    ? item.sender_name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
+    ? item.sender_name.charAt(0).toUpperCase()
     : "?";
 
   return (
-    <div className="flex flex-col gap-2 p-4 rounded-2xl bg-[#fdfdfd05] border-[0.4px] border-[#fdfdfd33]/40 backdrop-blur-[10.5px] shadow-[0_4px_21px_2px_rgba(0,0,0,0.15)]">
+    <div className="relative overflow-hidden flex flex-col gap-[8px] p-2 rounded-2xl bg-[#fdfdfd05] backdrop-blur-[12px] shadow-[0_4px_24px_2px_rgba(0,0,0,0.15)]">
+      {/* Gradient border */}
+      <div className="absolute inset-0 rounded-2xl p-[0.4px] pointer-events-none opacity-[0.4]"
+        style={{
+          background: 'linear-gradient(119deg, rgba(253,253,253,0.6), rgba(202,202,202,0.6) 57%, rgba(151,151,151,0.6))',
+          WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
+          WebkitMaskComposite: 'xor',
+          maskComposite: 'exclude'
+        }}
+      />
       {/* Header */}
-      <div className="flex flex-col gap-2 w-full">
+      <div className="flex flex-col gap-1 w-full">
         {/* Sender Info Row */}
         <div className="flex justify-between items-start w-full">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-[#fdfdfd33] flex items-center justify-center flex-shrink-0">
-              <span className="text-[10px] font-semibold text-[#fdfdfdcc]">
+          <div className="flex items-center gap-1">
+            <div className="w-[28px] h-[28px] rounded-full bg-[#fdfdfd33] flex items-center justify-center flex-shrink-0">
+              <span className="text-[10px] font-semibold text-[#fdfdfdcc] tracking-[0.4px]">
                 {senderInitials}
               </span>
             </div>
             <div className="flex flex-col gap-[-1px]">
-              <span className="text-[10px] font-medium text-[#fdfdfdcc] tracking-[0.4px] leading-[2]">
+              <span className="text-xs font-medium text-[#fdfdfdcc] tracking-[3.33%] leading-[1.19]">
                 {item.sender_name || "Unknown"}
               </span>
-              <span className="text-[8px] text-[#fdfdfd66] tracking-[0.4px] leading-[2.5]">
+              <span className="text-[8px] text-[#fdfdfd66] tracking-[5%] leading-[1.19]">
                 {item.sender_email}
               </span>
             </div>
@@ -210,20 +223,20 @@ const TaskCard = ({
         </div>
 
         {/* Title */}
-        <p className="text-xs font-medium text-[#fdfdfdcc] tracking-[0.4px]">{item.title}</p>
+        <p className="text-xs font-medium text-[#fdfdfdcc] tracking-[3.33%] leading-[1.19] mt-[4px]">{item.title}</p>
       </div>
 
       {/* Content */}
       {isReply && item.description && (
-        <div className="w-full">
-          <p className="text-[8px] text-[#fdfdfd99] tracking-[0.4px] leading-[1.375] line-clamp-2">
+        <div className="w-full rounded-xl flex flex-col justify-center mt-[-2px]">
+          <p className="text-[8px] text-[#fdfdfd99] tracking-[5%] leading-[1.375] line-clamp-2">
             {item.description}
           </p>
         </div>
       )}
 
       {isReceipt && item.receipt_details && (
-        <div className="flex flex-col gap-0 rounded-lg bg-[#13131366] p-3 border-[0.4px] border-[#fdfdfd4d] w-full">
+        <div className="flex flex-col gap-0 rounded-lg bg-[#13131366] px-[12px] py-[12px] border-[0.4px] border-[#fdfdfd4d] w-full mt-[-2px]">
           <span className="text-lg text-[#fdfdfdcc] tracking-[0.4px] font-medium">
             {item.receipt_details.currency || "₦"}
             {item.receipt_details.amount?.toLocaleString() || "0.00"}
@@ -241,7 +254,7 @@ const TaskCard = ({
       )}
 
       {isMeeting && item.meeting_details && (
-        <div className="flex flex-col gap-0 rounded-lg bg-[#13131366] p-3 border-[0.4px] border-[#fdfdfd4d] w-full">
+        <div className="flex flex-col gap-0 rounded-lg bg-[#13131366] px-[12px] py-[12px] border-[0.4px] border-[#fdfdfd4d] w-full mt-[-2px]">
           <span className="text-lg text-[#fdfdfdcc] tracking-[0.4px] font-medium">
             {item.meeting_details.topic || item.title}
           </span>
@@ -258,7 +271,7 @@ const TaskCard = ({
       )}
 
       {/* Tags & Confidence */}
-      <div className="flex justify-between items-center w-full pb-3 border-b border-b-[#fdfdfd66]/40">
+      <div className="flex justify-between items-center w-full mt-[2px] pb-1.5 border-b-[0.2px] border-b-[#fdfdfd66]">
         <div className="flex items-center gap-2">
           {getTags().map((tag, index) => (
             <SmallTag key={index} label={tag.label} variant={tag.variant} />
@@ -273,8 +286,8 @@ const TaskCard = ({
       </div>
 
       {/* Actions */}
-      <div className="flex justify-between items-center w-full">
-        <div className="flex items-center gap-3">
+      <div className="flex justify-between items-center w-full mt-[4px]">
+        <div className="flex items-center gap-2">
           {isReply && (
             <ActionButton
               label="Reply"
@@ -303,7 +316,7 @@ const TaskCard = ({
           <ActionButton label="Done" iconPath="/done.svg" onClick={onDone} />
         </div>
         {!item.user_feedback && (
-          <div className="flex items-center gap-[21px]">
+          <div className="flex items-center gap-2 ml-auto">
             <button
               onClick={onThumbsUp}
               className="hover:opacity-70 transition-opacity"
@@ -313,7 +326,7 @@ const TaskCard = ({
                 alt="Thumbs up"
                 width={14}
                 height={14}
-                className="w-3.5 h-3.5"
+                className="w-[14px] h-[14px]"
               />
             </button>
             <button
@@ -325,7 +338,7 @@ const TaskCard = ({
                 alt="Thumbs down"
                 width={14}
                 height={14}
-                className="w-3.5 h-3.5"
+                className="w-[14px] h-[14px]"
               />
             </button>
           </div>
@@ -398,7 +411,7 @@ export default function Dashboard() {
       {/* Background Gradient Effects */}
       <div className="absolute w-[231px] h-[231px] rounded-full bg-[#0606064d] blur-[175px] -left-[71px] top-[473px]" />
       <div className="absolute w-[231px] h-[231px] rounded-full bg-[#0606064d] blur-[175px] right-[139px] top-[156px]" />
-      <div className="absolute w-[285px] h-[285px] rounded-full bg-[#e8f40126] blur-[70px] right-[59px] bottom-[351px] mix-blend-lighten" />
+      <div className="absolute w-[285px] h-[285px] rounded-full bg-[#e8f40126] blur-[70px] right-[-120px] bottom-[351px] mix-blend-lighten" />
 
       {/* Main Container - Responsive */}
       <div className="relative w-full max-w-md lg:max-w-lg xl:max-w-xl mx-auto px-2 lg:px-4">

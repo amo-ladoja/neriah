@@ -12,7 +12,7 @@ type Step = {
 
 export default function ExtractingPage() {
   const [currentStep, setCurrentStep] = useState(0);
-  const [allComplete, setAllComplete] = useState(false);
+  const [extractionComplete, setExtractionComplete] = useState(false);
   const [extractionError, setExtractionError] = useState<string | null>(null);
   const router = useRouter();
 
@@ -38,6 +38,14 @@ export default function ExtractingPage() {
         }
 
         console.log("[Extracting] Extraction complete:", data);
+
+        // Mark extraction as complete
+        setExtractionComplete(true);
+
+        // Complete all remaining steps
+        setSteps((prev) =>
+          prev.map((step) => ({ ...step, status: "completed" as const }))
+        );
       } catch (error) {
         console.error("[Extracting] Extraction error:", error);
         setExtractionError(error instanceof Error ? error.message : "Unknown error");
@@ -46,13 +54,15 @@ export default function ExtractingPage() {
 
     startExtraction();
 
-    // Animate steps sequentially
-    const stepDurations = [2000, 2500, 2000, 2500]; // Duration for each step in ms
+    // Animate steps sequentially (visual feedback while waiting)
+    // Total extraction time: ~60 seconds (5 emails × 12s delay)
+    const stepDurations = [10000, 15000, 20000, 15000]; // Total: 60 seconds
     let totalTime = 0;
 
     stepDurations.forEach((duration, index) => {
       // Mark step as completed
       setTimeout(() => {
+        // Only update if extraction isn't complete yet
         setSteps((prev) =>
           prev.map((step, i) => {
             if (i === index) return { ...step, status: "completed" };
@@ -65,15 +75,10 @@ export default function ExtractingPage() {
 
       totalTime += duration;
     });
-
-    // All steps complete
-    setTimeout(() => {
-      setAllComplete(true);
-    }, totalTime + stepDurations[stepDurations.length - 1]);
   }, []);
 
   const handleGetStarted = () => {
-    if (allComplete && !extractionError) {
+    if (extractionComplete && !extractionError) {
       router.push("/dashboard");
     }
   };
@@ -183,14 +188,14 @@ export default function ExtractingPage() {
           ) : (
             <button
               onClick={handleGetStarted}
-              disabled={!allComplete}
+              disabled={!extractionComplete}
               className={`w-full px-4 py-2 md:px-12 md:py-5 rounded-[26px] md:rounded-[29px] text-base md:text-lg font-semibold transition-all duration-300 ${
-                allComplete
+                extractionComplete
                   ? "bg-e8f401-100 text-060606-100 hover:bg-e8f401-100/90 cursor-pointer"
                   : "bg-e8f401-100 text-060606-100 cursor-not-allowed opacity-50"
               }`}
             >
-              Get Started
+              {extractionComplete ? "Get Started" : "Extracting..."}
             </button>
           )}
         </div>

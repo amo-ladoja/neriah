@@ -54,7 +54,15 @@ public/worker-*.js.map
 *.swp
 *.swo
 *~
-SETUP_GOOGLE_OAUTH.md
 supabase/README.md
 supabase/schema.sql
+todo.md
 SETUP_GUIDE.md
+supabase-fix-unique-constraint.sql
+supabase-migration-add-confidence.sql
+supabase-migration-rename-columns.sql
+supabase-migration-fix-all-columns.sql
+supabase-recreate-items-table.sql
+supabase-schema-fix-simple.sql
+logs/figma-simplified.json
+logs/figma-raw.json

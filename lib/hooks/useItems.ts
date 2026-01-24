@@ -25,7 +25,7 @@ export function useItems(filter: FilterType = "all") {
         let query = supabase
           .from("items")
           .select("*")
-          .eq("status", "active")
+          .eq("status", "pending")
           .order("priority", { ascending: false })
           .order("email_date", { ascending: false });
 
@@ -72,7 +72,7 @@ export function useItems(filter: FilterType = "all") {
 
             // Check if item matches current filter
             const matchesFilter =
-              newItem.status === "active" &&
+              newItem.status === "pending" &&
               (filter === "all" ||
                 (filter === "tasks" && TASK_CATEGORIES.includes(newItem.category)) ||
                 (filter === "receipts" && newItem.category === "invoice") ||

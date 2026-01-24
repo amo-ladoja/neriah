@@ -14,7 +14,7 @@ export async function signInWithGoogle() {
     provider: "google",
     options: {
       redirectTo: `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/auth/callback`,
-      scopes: "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.metadata",
+      scopes: "https://www.googleapis.com/auth/gmail.readonly",
       queryParams: {
         access_type: "offline", // Request refresh token
         prompt: "consent", // Force consent screen to get refresh token
