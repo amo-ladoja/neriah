@@ -167,6 +167,7 @@ export async function fetchRecentEmails(
 
   return fetchEmails(userId, {
     maxResults: 50,
+    query: "category:primary",
     after: afterDate,
   });
 }

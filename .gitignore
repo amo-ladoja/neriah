@@ -66,3 +66,9 @@ supabase-recreate-items-table.sql
 supabase-schema-fix-simple.sql
 logs/figma-simplified.json
 logs/figma-raw.json
+SETUP_GOOGLE_OAUTH.md
+SETUP_GUIDE.md
+SETUP_GOOGLE_OAUTH.md
+SETUP_GUIDE.md
+remotion.config.ts
+SETUP_GOOGLE_OAUTH.md

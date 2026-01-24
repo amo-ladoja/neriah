@@ -106,12 +106,29 @@ export async function POST(request: NextRequest) {
         parseEmailForExtraction(msg)
       );
 
+      // Step 2.5: Check for existing items to prevent duplicates
+      const { data: existingItems } = await supabase
+        .from("items")
+        .select("email_id")
+        .eq("user_id", user.id)
+        .in("email_id", parsedEmails.map((e) => e.messageId));
+
+      const existingEmailIds = new Set(
+        existingItems?.map((item) => item.email_id) || []
+      );
+
       // Step 3: Extract actionable items using Claude (with rate limiting)
       console.log("[Extract Initial] Extracting items with Claude AI...");
       let totalItemsCreated = 0;
 
       for (let i = 0; i < parsedEmails.length; i++) {
         const email = parsedEmails[i];
+
+        // Skip emails already processed
+        if (existingEmailIds.has(email.messageId)) {
+          console.log(`[Extract Initial] Skipping already-processed email: ${email.subject}`);
+          continue;
+        }
         try {
           console.log(`[Extract Initial] Processing email ${i + 1}/${parsedEmails.length}: "${email.subject}"`);
 
@@ -131,12 +148,21 @@ export async function POST(request: NextRequest) {
             0.5
           );
 
+          // Deduplicate items from same email by type+title
+          const seenKeys = new Set<string>();
+          const uniqueItems = highConfidenceItems.filter((item: any) => {
+            const key = `${item.type}:${item.title || item.vendor || ""}`;
+            if (seenKeys.has(key)) return false;
+            seenKeys.add(key);
+            return true;
+          });
+
           console.log(
-            `[Extract Initial] Email "${email.subject}": ${highConfidenceItems.length} items extracted`
+            `[Extract Initial] Email "${email.subject}": ${uniqueItems.length} items extracted (${highConfidenceItems.length - uniqueItems.length} duplicates removed)`
           );
 
           // Step 4: Store items in database
-          for (const item of highConfidenceItems) {
+          for (const item of uniqueItems) {
             try {
               // Parse sender email
               const senderMatch = email.from.match(/<(.+?)>/);

@@ -256,7 +256,19 @@ const TaskCard = ({
       {isMeeting && item.meeting_details && (
         <div className="flex flex-col gap-0 rounded-lg bg-[#13131366] px-[12px] py-[12px] border-[0.4px] border-[#fdfdfd4d] w-full mt-[-2px]">
           <span className="text-lg text-[#fdfdfdcc] tracking-[0.4px] font-medium">
-            {item.meeting_details.topic || item.title}
+            {item.meeting_details.suggestedTimes?.[0]
+              ? new Date(item.meeting_details.suggestedTimes[0]).toLocaleDateString("en-US", {
+                  weekday: "long",
+                  month: "short",
+                  day: "numeric",
+                }) +
+                " at " +
+                new Date(item.meeting_details.suggestedTimes[0]).toLocaleTimeString("en-US", {
+                  hour: "numeric",
+                  minute: "2-digit",
+                  hour12: true,
+                })
+              : item.title}
           </span>
           <div className="flex items-center gap-1">
             <span className="text-[8px] font-medium text-[#fdfdfd99] tracking-[0.4px] leading-[2.5]">
@@ -356,6 +368,7 @@ export default function Dashboard() {
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const { items, loading, error } = useItems(activeFilter);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
 
   const handleSync = async () => {
     setIsSyncing(true);
@@ -427,10 +440,45 @@ export default function Dashboard() {
         </div>
 
         {/* Header Icons */}
-        <div className="absolute left-2 lg:left-4 top-16">
-          <button className="flex items-center justify-center p-[9.984px] rounded-full bg-[#fdfdfd1f] backdrop-blur-[11.375px] border-[1.2px] border-[#fdfdfd33] hover:bg-[#fdfdfd26] transition-all shadow-[0_0_8px_rgba(253,253,253,0.3)]">
+        <div className="absolute left-2 lg:left-4 top-16 z-50">
+          <button
+            onClick={() => setShowUserMenu(!showUserMenu)}
+            className="flex items-center justify-center p-[9.984px] rounded-full bg-[#fdfdfd1f] backdrop-blur-[11.375px] border-[1.2px] border-[#fdfdfd33] hover:bg-[#fdfdfd26] transition-all shadow-[0_0_8px_rgba(253,253,253,0.3)]"
+          >
             <Image src="/User.svg" alt="Profile" width={18} height={18} />
           </button>
+
+          {/* User Dropdown Menu */}
+          {showUserMenu && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowUserMenu(false)} />
+              <div
+                className="relative z-50 mt-[8px] flex flex-col gap-[24px] px-[24px] py-[24px] rounded-2xl border-[0.4px] border-[#fdfdfd33]"
+                style={{
+                  backgroundColor: "rgba(30, 30, 30, 0.8)",
+                  backdropFilter: "blur(12px)",
+                  WebkitBackdropFilter: "blur(12px)",
+                }}
+              >
+                <button className="flex items-center gap-[16px] text-[16px] text-[#fdfdfdcc] hover:text-[#fdfdfd] transition-colors">
+                  <Image src="/account.svg" alt="Account" width={20} height={20} />
+                  <span>Account</span>
+                </button>
+                <button className="flex items-center gap-[16px] text-[16px] text-[#fdfdfdcc] hover:text-[#fdfdfd] transition-colors">
+                  <Image src="/notification.svg" alt="Notifications" width={20} height={20} />
+                  <span>Notifications</span>
+                </button>
+                <button className="flex items-center gap-[16px] text-[16px] text-[#fdfdfdcc] hover:text-[#fdfdfd] transition-colors">
+                  <Image src="/data.svg" alt="Data" width={20} height={20} />
+                  <span>Data</span>
+                </button>
+                <button className="flex items-center gap-[16px] text-[16px] text-[#fdfdfdcc] hover:text-[#fdfdfd] transition-colors">
+                  <Image src="/about.svg" alt="About" width={20} height={20} />
+                  <span>About</span>
+                </button>
+              </div>
+            </>
+          )}
         </div>
 
         <div className="absolute right-2 lg:right-4 top-16">

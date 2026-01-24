@@ -54,22 +54,27 @@ export interface ExtractionResult {
   processingNotes?: string;
 }
 
-const EXTRACTION_PROMPT = `Extract actionable items from this email. Return JSON only.
+const EXTRACTION_PROMPT = `Extract actionable items from this email. Return JSON only. Extract ONE item per email unless there are clearly distinct items.
 
 Types:
 1. Task (reply/follow-up/deadline/action_required) - priority: urgent/normal/low
 2. Receipt (vendor, amount, currency, date, invoiceNumber) - category: groceries/software/hardware/dining/travel/utilities/other
-3. Meeting (title, dateTime ISO format, duration mins, attendees emails)
+3. Meeting (title, dateTime, duration, attendees, description)
 
 Rules:
 - Only extract clear actionable items
 - Skip spam/newsletters/promos
+- Extract ONE item per email unless truly multiple distinct items exist
 - Confidence: 0.9-1.0 (clear), 0.7-0.89 (good), 0.5-0.69 (moderate)
 - Use ONLY these priority values: "urgent", "normal", or "low"
+- For meetings: extract the ACTUAL date/time from the email body or calendar invite, the real duration in minutes, and real attendee email addresses. Do NOT use placeholder values.
 
-Output format:
-{"items": [{"type": "task", "title": "...", "description": "...", "priority": "normal", "category": "reply", "confidence": 0.9}], "summary": "Brief summary"}
+Output examples:
+Task: {"type": "task", "title": "...", "description": "...", "priority": "normal", "category": "reply", "confidence": 0.9}
+Receipt: {"type": "receipt", "vendor": "Apple", "amount": 9900, "currency": "NGN", "date": "2026-01-24", "invoiceNumber": "123", "category": "software", "confidence": 0.95}
+Meeting: {"type": "meeting", "title": "Strategy Meeting", "dateTime": "2026-01-27T14:00:00", "duration": 30, "attendees": ["person@email.com"], "description": "Discuss Q1 goals", "confidence": 0.9}
 
+Format: {"items": [...], "summary": "Brief summary"}
 Return empty array if no items: {"items": [], "summary": "No actionable items"}`;
 
 /**
