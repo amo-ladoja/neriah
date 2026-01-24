@@ -64,7 +64,8 @@ Types:
 Rules:
 - Only extract clear actionable items
 - Skip spam/newsletters/promos
-- Extract ONE item per email unless truly multiple distinct items exist
+- An email can have multiple items ONLY if they are different types (e.g. a meeting invite should produce both a "meeting" to schedule AND a "task" to reply)
+- Never extract two items of the same type from one email
 - Confidence: 0.9-1.0 (clear), 0.7-0.89 (good), 0.5-0.69 (moderate)
 - Use ONLY these priority values: "urgent", "normal", or "low"
 - For meetings: extract the ACTUAL date/time from the email body or calendar invite, the real duration in minutes, and real attendee email addresses. Do NOT use placeholder values.
