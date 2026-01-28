@@ -55,6 +55,13 @@ export async function GET(request: Request) {
       .eq("id", user.id)
       .single();
 
+    // Ensure profile row exists for new users (required by sync_logs FK)
+    await supabase.from("profiles").upsert({
+      id: user.id,
+      email: user.email,
+      full_name: user.user_metadata?.full_name || "",
+    }, { onConflict: "id" });
+
     // Store Gmail tokens in profile
     // The provider_token is the access token from Google
     const providerToken = data.session?.provider_token;

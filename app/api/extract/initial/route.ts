@@ -18,18 +18,14 @@ import { extractFromEmail, filterByConfidence } from "@/lib/ai/claude";
  */
 
 // Helper function to normalize priority values to match database enum
-function normalizePriority(priority: string): "urgent" | "normal" | "low" {
+function normalizePriority(priority: string): "urgent" | "high" | "medium" | "low" {
   const normalizedPriority = priority.toLowerCase();
 
-  // Map common variations to valid enum values
-  if (normalizedPriority === "high" || normalizedPriority === "urgent") {
-    return "urgent";
-  }
-  if (normalizedPriority === "medium" || normalizedPriority === "normal") {
-    return "normal";
-  }
-  // Default to normal for any other value
-  return "normal";
+  if (normalizedPriority === "urgent") return "urgent";
+  if (normalizedPriority === "high") return "high";
+  if (normalizedPriority === "medium" || normalizedPriority === "normal") return "medium";
+  if (normalizedPriority === "low") return "low";
+  return "medium";
 }
 
 export async function POST(request: NextRequest) {
@@ -186,12 +182,12 @@ export async function POST(request: NextRequest) {
 
               // Type-specific fields
               if (item.type === "task") {
-                itemData.category = item.category; // reply, follow_up, deadline, review
+                itemData.category = "task";
                 itemData.title = item.title;
                 itemData.description = item.description;
                 itemData.priority = normalizePriority(item.priority);
               } else if (item.type === "receipt") {
-                itemData.category = "invoice"; // All receipts have category "invoice"
+                itemData.category = "receipt";
                 itemData.title = `Receipt from ${item.vendor}`;
                 itemData.description = `${item.currency} ${item.amount}`;
                 itemData.receipt_category = item.category; // software, travel, medical, etc.
@@ -209,7 +205,7 @@ export async function POST(request: NextRequest) {
                 itemData.category = "meeting"; // All meetings have category "meeting"
                 itemData.title = item.title;
                 itemData.description = item.description;
-                itemData.priority = "normal"; // Default priority for meetings
+                itemData.priority = "medium";
                 itemData.meeting_details = {
                   attendees: item.attendees || [],
                   suggestedTimes: item.dateTime ? [item.dateTime] : [],

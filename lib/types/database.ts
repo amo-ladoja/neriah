@@ -16,6 +16,8 @@ export type Profile = {
 };
 
 export type ItemCategory =
+  | "task"
+  | "receipt"
   | "reply"
   | "invoice"
   | "follow_up"
@@ -23,7 +25,7 @@ export type ItemCategory =
   | "review"
   | "meeting";
 
-export type ItemPriority = "urgent" | "normal" | "low";
+export type ItemPriority = "urgent" | "high" | "medium" | "normal" | "low";
 
 export type ItemStatus = "pending" | "completed" | "snoozed" | "deleted";
 

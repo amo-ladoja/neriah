@@ -17,34 +17,34 @@ export default function LandingPage() {
     }
   };
   return (
-    <div className="relative h-screen bg-060606-100 overflow-hidden fixed inset-0">
+    <div className="relative min-h-screen bg-060606-100 overflow-hidden">
       {/* Noise Texture Background */}
       <div className="absolute inset-0 opacity-[0.15] pointer-events-none bg-noise"></div>
 
       {/* Dark Blur Effect (060606) */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-060606-100 rounded-full blur-[150px] opacity-50"></div>
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[80vw] h-[80vw] max-w-[600px] max-h-[600px] bg-060606-100 rounded-full blur-[150px] opacity-50"></div>
 
       {/* Yellow Blur Effect (E8F401) - Bottom Right */}
-      <div className="absolute bottom-0 right-0 w-[400px] h-[400px] bg-e8f401-100 rounded-full blur-[200px] opacity-20"></div>
+      <div className="absolute bottom-0 right-0 w-[60vw] h-[60vw] max-w-[400px] max-h-[400px] bg-e8f401-100 rounded-full blur-[200px] opacity-20"></div>
 
       {/* Content Container */}
-      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-6 py-8 md:py-12">
+      <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 sm:px-6 py-6 sm:py-8 md:py-12">
         {/* Hero Content */}
         <div className="flex flex-col items-center flex-1 justify-center max-w-md md:max-w-lg mb-2 md:mb-4">
           {/* 3D Mark */}
-          <div className="relative mb-12 md:mb-16">
+          <div className="relative mb-8 sm:mb-12 md:mb-16">
             <Image
               src="/3d-mark.svg"
               alt="Neriah Mark"
               width={320}
               height={320}
-              className="w-[280px] md:w-[360px] h-auto"
+              className="w-[65vw] sm:w-[50vw] md:w-[360px] max-w-[360px] h-auto"
               priority
             />
           </div>
 
           {/* Tagline */}
-          <h1 className="text-fdfdfd-100 text-center text-[12px] md:text-[17px] font-semibold tracking-[0.3em] mb-16 md:mb-20 leading-relaxed">
+          <h1 className="text-fdfdfd-100 text-center text-[11px] sm:text-[13px] md:text-[17px] font-semibold tracking-[0.25em] sm:tracking-[0.3em] mb-12 sm:mb-16 md:mb-20 leading-relaxed">
             INFORMATION DELIVERED<br />THE RIGHT WAY
           </h1>
 
@@ -52,7 +52,7 @@ export default function LandingPage() {
           <button
             onClick={handleSignIn}
             disabled={isLoading}
-            className="group relative px-4 py-2 md:px-12 md:py-5 rounded-[26px] md:rounded-[29px] border border-fdfdfd-40 bg-fdfdfd-12 text-fdfdfd-100 font-semibold text-base md:text-lg transition-all duration-300 hover:border-fdfdfd-60 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(253,253,253,0.1)] hover:shadow-[0_0_30px_rgba(253,253,253,0.2)]"
+            className="group relative px-6 sm:px-8 md:px-12 py-3 sm:py-4 md:py-5 rounded-full border border-fdfdfd-40 bg-fdfdfd-12 text-fdfdfd-100 font-semibold text-sm sm:text-base md:text-lg transition-all duration-300 hover:border-fdfdfd-60 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(253,253,253,0.1)] hover:shadow-[0_0_30px_rgba(253,253,253,0.2)]"
           >
             <div className="flex items-center gap-2">
               {isLoading ? (

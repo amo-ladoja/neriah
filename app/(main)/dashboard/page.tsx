@@ -136,8 +136,8 @@ const TaskCard = ({
   onThumbsUp,
   onThumbsDown,
 }: TaskCardProps) => {
-  const isReply = ["reply", "follow_up", "deadline", "review"].includes(item.category);
-  const isReceipt = item.category === "invoice";
+  const isReply = ["task", "reply", "follow_up", "deadline", "review"].includes(item.category);
+  const isReceipt = ["receipt", "invoice"].includes(item.category);
   const isMeeting = item.category === "meeting";
 
   const formatDate = (dateString: string | null) => {
@@ -393,6 +393,14 @@ export default function Dashboard() {
   };
 
   const handleScheduleMeeting = (item: Item) => {
+    // If email already has a calendar invite, open it instead of creating new
+    if (item.calendar_event_id) {
+      const eventUrl = `https://calendar.google.com/calendar/event?eid=${item.calendar_event_id}`;
+      openInNewTab(eventUrl);
+      return;
+    }
+
+    // Otherwise, create a new calendar event
     if (!item.meeting_details) return;
 
     const link = generateMeetingLink({
