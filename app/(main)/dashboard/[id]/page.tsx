@@ -470,7 +470,7 @@ export default function ItemDetailPage() {
                           letterSpacing: "0.4px",
                           color: "rgba(253, 253, 253, 0.8)",
                           textDecoration: "none",
-                        }}
+                        } as React.CSSProperties}
                       >
                         {item.sender_name || "Unknown"}
                       </span>
@@ -482,7 +482,9 @@ export default function ItemDetailPage() {
                           letterSpacing: "0.4px",
                           color: "rgba(253, 253, 253, 0.6)",
                           textDecoration: "none",
-                        }}
+                          userSelect: "none",
+                          WebkitUserSelect: "none",
+                        } as React.CSSProperties}
                       >
                         {item.sender_email}
                       </span>

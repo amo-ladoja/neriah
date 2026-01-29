@@ -26,6 +26,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <head>
+        <meta name="format-detection" content="telephone=no, email=no, address=no" />
         <link rel="icon" href="/neriah_box.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/neriah_box.svg" />
       </head>

@@ -210,10 +210,10 @@ const TaskCard = ({
               </span>
             </div>
             <div className="flex flex-col gap-[-1px]">
-              <span className="text-xs font-medium text-[#fdfdfdcc] tracking-[3.33%] leading-[1.19] no-underline" style={{ textDecoration: 'none' }}>
+              <span className="text-xs font-medium text-[#fdfdfdcc] tracking-[3.33%] leading-[1.19] no-underline" style={{ textDecoration: 'none' } as React.CSSProperties}>
                 {item.sender_name || "Unknown"}
               </span>
-              <span className="text-[8px] text-[#fdfdfd66] tracking-[5%] leading-[1.19] no-underline" style={{ textDecoration: 'none' }}>
+              <span className="text-[8px] text-[#fdfdfd66] tracking-[5%] leading-[1.19] no-underline" style={{ textDecoration: 'none', userSelect: 'none', WebkitUserSelect: 'none' } as React.CSSProperties}>
                 {item.sender_email}
               </span>
             </div>

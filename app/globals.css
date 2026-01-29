@@ -148,6 +148,15 @@
   /* Prevent Chrome from auto-detecting emails/phones as links */
   span, p, div {
     -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+
+  /* Specifically prevent email/phone auto-detection styling */
+  span[style*="textDecoration"], 
+  span.no-underline,
+  span {
+    text-decoration: none !important;
+    -webkit-text-decoration: none !important;
   }
 
   /* Custom font will be loaded here */
