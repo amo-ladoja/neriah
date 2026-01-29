@@ -210,10 +210,10 @@ const TaskCard = ({
               </span>
             </div>
             <div className="flex flex-col gap-[-1px]">
-              <span className="text-xs font-medium text-[#fdfdfdcc] tracking-[3.33%] leading-[1.19]">
+              <span className="text-xs font-medium text-[#fdfdfdcc] tracking-[3.33%] leading-[1.19] no-underline" style={{ textDecoration: 'none' }}>
                 {item.sender_name || "Unknown"}
               </span>
-              <span className="text-[8px] text-[#fdfdfd66] tracking-[5%] leading-[1.19]">
+              <span className="text-[8px] text-[#fdfdfd66] tracking-[5%] leading-[1.19] no-underline" style={{ textDecoration: 'none' }}>
                 {item.sender_email}
               </span>
             </div>
@@ -608,7 +608,7 @@ export default function Dashboard() {
 
       {/* Bottom Navigation - Fixed */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#13131333] backdrop-blur-[17.5px] border-t-[0.4px] border-t-[#fdfdfd33]">
-        <div className="w-full max-w-md lg:max-w-lg xl:max-w-xl mx-auto px-6 py-4">
+        <div className="w-full max-w-md lg:max-w-lg xl:max-w-xl mx-auto px-6 py-2">
           <div className="flex justify-center items-center gap-40">
             <button className="hover:opacity-70 transition-opacity">
               <Image src="/menu.svg" alt="Menu" width={24} height={24} />
@@ -618,9 +618,6 @@ export default function Dashboard() {
             </button>
           </div>
         </div>
-
-        {/* Home Indicator - Mobile Only */}
-        <div className="block md:hidden w-[134px] h-[5px] bg-white rounded-full mx-auto mb-2" />
       </div>
 
       <style jsx global>{`

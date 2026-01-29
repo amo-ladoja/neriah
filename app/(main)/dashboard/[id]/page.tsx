@@ -469,6 +469,7 @@ export default function ItemDetailPage() {
                           lineHeight: "1.19em",
                           letterSpacing: "0.4px",
                           color: "rgba(253, 253, 253, 0.8)",
+                          textDecoration: "none",
                         }}
                       >
                         {item.sender_name || "Unknown"}
@@ -480,6 +481,7 @@ export default function ItemDetailPage() {
                           lineHeight: "1.19em",
                           letterSpacing: "0.4px",
                           color: "rgba(253, 253, 253, 0.6)",
+                          textDecoration: "none",
                         }}
                       >
                         {item.sender_email}
