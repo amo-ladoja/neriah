@@ -126,7 +126,7 @@ export default function ItemDetailPage() {
     return (
       <div className="min-h-screen bg-[#1E1E1E] flex flex-col items-center justify-center gap-4">
         <p className="text-[rgba(253,253,253,0.6)] text-[12px]">{error || "Item not found"}</p>
-        <button onClick={() => router.push("/dashboard")} className="text-[#E8F401] text-[12px]">
+        <button onClick={() => router.push("/dashboard")} className="text-[#E8F401] text-[12px] no-underline">
           Back to dashboard
         </button>
       </div>
@@ -143,7 +143,7 @@ export default function ItemDetailPage() {
       className="relative min-h-screen overflow-x-hidden"
       style={{ backgroundColor: "#1E1E1E", backdropFilter: "blur(24px)" }}
     >
-      {/* Background Blur Effects */}
+      {/* Background Blur Effects - Extended beyond viewport */}
       <div
         className="absolute rounded-full pointer-events-none"
         style={{
@@ -161,7 +161,7 @@ export default function ItemDetailPage() {
           width: 231,
           height: 231,
           right: -139,
-          top: 156,
+          top: -100,
           background: "rgba(6, 6, 6, 0.3)",
           filter: "blur(200px)",
         }}
@@ -172,7 +172,7 @@ export default function ItemDetailPage() {
           width: 285,
           height: 285,
           right: -59,
-          top: 523,
+          bottom: -200,
           background: "rgba(232, 244, 1, 0.15)",
           filter: "blur(80px)",
         }}
@@ -461,7 +461,7 @@ export default function ItemDetailPage() {
                         {senderInitials}
                       </span>
                     </div>
-                    <div className="flex flex-col gap-[-1px]">
+                    <div className="flex flex-col gap-[2px]">
                       <span
                         style={{
                           fontWeight: 500,
