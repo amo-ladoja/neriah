@@ -6,7 +6,7 @@ type Item = Database["public"]["Tables"]["items"]["Row"];
 
 type FilterType = "all" | "tasks" | "receipts" | "meetings";
 
-const TASK_CATEGORIES = ["reply", "follow_up", "deadline", "review"];
+const TASK_CATEGORIES = ["task", "reply", "follow_up", "deadline", "review"];
 
 export function useItems(filter: FilterType = "all") {
   const [items, setItems] = useState<Item[]>([]);
@@ -33,7 +33,7 @@ export function useItems(filter: FilterType = "all") {
         if (filter === "tasks") {
           query = query.in("category", TASK_CATEGORIES);
         } else if (filter === "receipts") {
-          query = query.eq("category", "invoice");
+          query = query.in("category", ["receipt", "invoice"]);
         } else if (filter === "meetings") {
           query = query.eq("category", "meeting");
         }
@@ -75,7 +75,7 @@ export function useItems(filter: FilterType = "all") {
               newItem.status === "pending" &&
               (filter === "all" ||
                 (filter === "tasks" && TASK_CATEGORIES.includes(newItem.category)) ||
-                (filter === "receipts" && newItem.category === "invoice") ||
+                (filter === "receipts" && ["receipt", "invoice"].includes(newItem.category)) ||
                 (filter === "meetings" && newItem.category === "meeting"));
 
             if (matchesFilter) {

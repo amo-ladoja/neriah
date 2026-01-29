@@ -120,18 +120,15 @@ export function openInNewTab(url: string) {
 
 /**
  * Generate reply link for an item
- * Extracts relevant info from item and generates Gmail compose link
+ * Opens the original email in Gmail so user can reply in thread context
  */
 export function generateReplyLink(item: {
   sender_email: string;
   title: string;
   email_id: string;
 }): string {
-  return generateGmailComposeLink({
-    to: item.sender_email,
-    subject: item.title,
-    messageId: item.email_id,
-  });
+  // Open the original email in Gmail (user clicks Reply there for proper threading)
+  return generateGmailMessageLink(item.email_id);
 }
 
 /**

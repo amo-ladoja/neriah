@@ -24,12 +24,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <head>
         <link rel="icon" href="/neriah_box.svg" type="image/svg+xml" />
         <link rel="apple-touch-icon" href="/neriah_box.svg" />
       </head>
-      <body className="antialiased font-sans">
+      <body className="antialiased font-sans bg-background">
         {children}
       </body>
     </html>
