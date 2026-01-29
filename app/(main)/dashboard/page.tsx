@@ -498,7 +498,7 @@ export default function Dashboard() {
 
         <div className="absolute right-2 lg:right-4 top-16">
           <button className="flex items-center justify-center p-[9.984px] rounded-full bg-[#fdfdfd1f] backdrop-blur-[11.375px] border-[1.2px] border-[#fdfdfd33] hover:bg-[#fdfdfd26] transition-all shadow-[0_0_8px_rgba(253,253,253,0.3)]">
-            <Image src="/search.svg" alt="Search" width={18} height={18} />
+            <Image src="/Search.svg" alt="Search" width={18} height={18} />
           </button>
         </div>
 
