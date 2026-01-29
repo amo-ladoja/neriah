@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useItems } from "@/lib/hooks/useItems";
 import { markItemComplete, submitFeedback } from "@/lib/actions/items";
+import { signOut } from "@/lib/actions/auth";
 import {
   generateReplyLink,
   generateMeetingLink,
@@ -484,12 +485,17 @@ export default function Dashboard() {
                   <span>Notifications</span>
                 </button>
                 <button className="flex items-center gap-[16px] text-[16px] text-[#fdfdfdcc] hover:text-[#fdfdfd] transition-colors">
-                  <Image src="/data.svg" alt="Data" width={20} height={20} />
-                  <span>Data</span>
-                </button>
-                <button className="flex items-center gap-[16px] text-[16px] text-[#fdfdfdcc] hover:text-[#fdfdfd] transition-colors">
                   <Image src="/about.svg" alt="About" width={20} height={20} />
                   <span>About</span>
+                </button>
+                <button 
+                  onClick={async () => {
+                    await signOut();
+                  }}
+                  className="flex items-center gap-[16px] text-[16px] text-[#fdfdfdcc] hover:text-[#fdfdfd] transition-colors"
+                >
+                  <Image src="/SignOut.svg" alt="Sign Out" width={20} height={20} />
+                  <span>Sign Out</span>
                 </button>
               </div>
             </>
