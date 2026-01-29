@@ -145,6 +145,11 @@
     text-decoration: none;
   }
 
+  /* Prevent Chrome from auto-detecting emails/phones as links */
+  span, p, div {
+    -webkit-tap-highlight-color: transparent;
+  }
+
   /* Custom font will be loaded here */
   /* User will provide custom font files */
 }
