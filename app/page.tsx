@@ -18,14 +18,17 @@ export default function LandingPage() {
   };
   return (
     <div className="relative min-h-screen bg-060606-100 overflow-hidden">
-      {/* Noise Texture Background */}
-      <div className="absolute inset-0 opacity-[0.15] pointer-events-none bg-noise"></div>
+      {/* Noise Texture Background - Extended beyond viewport */}
+      <div className="absolute -top-[100px] -bottom-[100px] left-0 right-0 opacity-[0.15] pointer-events-none bg-noise"></div>
 
-      {/* Dark Blur Effect (060606) */}
+      {/* Dark Blur Effect (060606) - Extended beyond viewport */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[80vw] h-[80vw] max-w-[600px] max-h-[600px] bg-060606-100 rounded-full blur-[150px] opacity-50"></div>
 
-      {/* Yellow Blur Effect (E8F401) - Bottom Right */}
-      <div className="absolute bottom-0 right-0 w-[60vw] h-[60vw] max-w-[400px] max-h-[400px] bg-e8f401-100 rounded-full blur-[200px] opacity-20"></div>
+      {/* Top Blur Effect - Extended beyond viewport top */}
+      <div className="absolute -top-[150px] left-1/3 w-[50vw] h-[50vw] max-w-[300px] max-h-[300px] bg-060606-100 rounded-full blur-[120px] opacity-40"></div>
+
+      {/* Yellow Blur Effect (E8F401) - Bottom Right - Extended beyond viewport */}
+      <div className="absolute -bottom-[200px] -right-[100px] w-[60vw] h-[60vw] max-w-[400px] max-h-[400px] bg-e8f401-100 rounded-full blur-[200px] opacity-20"></div>
 
       {/* Content Container */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-4 sm:px-6 py-6 sm:py-8 md:py-12">
