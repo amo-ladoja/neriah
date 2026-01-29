@@ -179,7 +179,7 @@ export default function ItemDetailPage() {
       />
 
       {/* Main Container */}
-      <div className="relative w-full max-w-[402px] mx-auto px-[17px]">
+      <div className="relative w-full max-w-[402px] mx-auto px-2 lg:px-4">
         {/* Header Row */}
         <div className="flex items-center gap-[12px] pt-[64px]">
           {/* Back Button */}
@@ -206,7 +206,7 @@ export default function ItemDetailPage() {
         <div className="flex flex-col gap-[20px] mt-[22px]">
           {/* Main Card */}
           <div
-            className="relative flex flex-col gap-[16px]"
+            className="relative flex flex-col gap-[20px]"
             style={{
               background: "rgba(253, 253, 253, 0.02)",
               borderRadius: 12,
@@ -228,7 +228,7 @@ export default function ItemDetailPage() {
             />
 
             {/* Sender Row */}
-            <div className="flex items-center gap-[12px]">
+            <div className="flex items-center gap-[14px]">
               <div
                 className="w-[28px] h-[28px] rounded-full flex items-center justify-center flex-shrink-0"
                 style={{ background: "rgba(253, 253, 253, 0.2)" }}
@@ -435,7 +435,7 @@ export default function ItemDetailPage() {
             )}
 
             {/* Original Email Section */}
-            <div className="flex flex-col gap-[10px]">
+            <div className="flex flex-col gap-[12px]">
               <span
                 style={{
                   fontWeight: 500,
@@ -657,7 +657,7 @@ export default function ItemDetailPage() {
                 disabled={!!item.user_feedback}
                 className="relative flex-1 flex items-center justify-center gap-[8px]"
                 style={{
-                  padding: "12px 48px",
+                  padding: "14px 52px",
                   borderRadius: 16,
                   background: item.user_feedback === "positive" ? "rgba(52, 168, 83, 0.2)" : "transparent",
                 }}
@@ -694,7 +694,7 @@ export default function ItemDetailPage() {
                 disabled={!!item.user_feedback}
                 className="relative flex-1 flex items-center justify-center gap-[8px]"
                 style={{
-                  padding: "12px 48px",
+                  padding: "14px 52px",
                   borderRadius: 16,
                   background: item.user_feedback === "negative" ? "rgba(128, 36, 11, 0.2)" : "transparent",
                 }}
@@ -738,7 +738,7 @@ export default function ItemDetailPage() {
               style={{
                 background: "#E8F401",
                 borderRadius: 16,
-                padding: "8px 36px",
+                padding: "10px 40px",
               }}
             >
               <Image src="/Chat.svg" alt="Reply" width={14} height={14} style={{ filter: "invert(1)" }} />
@@ -762,7 +762,7 @@ export default function ItemDetailPage() {
               style={{
                 background: "#E8F401",
                 borderRadius: 16,
-                padding: "8px 36px",
+                padding: "10px 40px",
               }}
             >
               <Image src="/Receipt.svg" alt="Receipt" width={14} height={14} style={{ filter: "invert(1)" }} />
@@ -786,7 +786,7 @@ export default function ItemDetailPage() {
               style={{
                 background: "#E8F401",
                 borderRadius: 16,
-                padding: "8px 36px",
+                padding: "10px 40px",
               }}
             >
               <Image src="/schedule.svg" alt="Schedule" width={14} height={14} />
@@ -810,7 +810,7 @@ export default function ItemDetailPage() {
             <button
               className="relative flex items-center justify-center gap-[8px] flex-1"
               style={{
-                padding: "8px 24px",
+                padding: "10px 28px",
                 borderRadius: 16,
               }}
             >
@@ -843,7 +843,7 @@ export default function ItemDetailPage() {
               onClick={handleMarkComplete}
               className="relative flex items-center justify-center gap-[8px] flex-1"
               style={{
-                padding: "8px 24px",
+                padding: "10px 28px",
                 borderRadius: 16,
               }}
             >
@@ -876,7 +876,7 @@ export default function ItemDetailPage() {
               onClick={handleDelete}
               className="relative flex items-center justify-center gap-[8px] flex-1"
               style={{
-                padding: "8px 24px",
+                padding: "10px 28px",
                 borderRadius: 16,
               }}
             >
