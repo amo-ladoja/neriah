@@ -140,6 +140,11 @@
     @apply bg-background text-foreground;
   }
 
+  /* Remove underlines from all links */
+  a {
+    text-decoration: none;
+  }
+
   /* Custom font will be loaded here */
   /* User will provide custom font files */
 }

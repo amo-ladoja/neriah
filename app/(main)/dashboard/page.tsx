@@ -235,7 +235,7 @@ const TaskCard = ({
 
       {/* Content */}
       {isReply && item.description && (
-        <div className="w-full rounded-xl flex flex-col justify-center mt-[-2px]">
+        <div className="w-full rounded-xl flex flex-col justify-center">
           <p className="text-[8px] text-[#fdfdfd99] tracking-[5%] leading-[1.375] line-clamp-2">
             {item.description}
           </p>
@@ -437,10 +437,10 @@ export default function Dashboard() {
 
   return (
     <div className="relative min-h-screen bg-[#1e1e1e] overflow-hidden pb-32">
-      {/* Background Gradient Effects */}
+      {/* Background Gradient Effects - Extended beyond viewport */}
       <div className="absolute w-[231px] h-[231px] rounded-full bg-[#0606064d] blur-[175px] -left-[71px] top-[473px]" />
-      <div className="absolute w-[231px] h-[231px] rounded-full bg-[#0606064d] blur-[175px] right-[139px] top-[156px]" />
-      <div className="absolute w-[285px] h-[285px] rounded-full bg-[#e8f40126] blur-[70px] right-[-120px] bottom-[351px] mix-blend-lighten" />
+      <div className="absolute w-[231px] h-[231px] rounded-full bg-[#0606064d] blur-[175px] right-[139px] -top-[100px]" />
+      <div className="absolute w-[285px] h-[285px] rounded-full bg-[#e8f40126] blur-[70px] right-[-120px] -bottom-[200px] mix-blend-lighten" />
 
       {/* Main Container - Responsive */}
       <div className="relative w-full max-w-md lg:max-w-lg xl:max-w-xl mx-auto px-2 lg:px-4">
@@ -608,7 +608,7 @@ export default function Dashboard() {
 
       {/* Bottom Navigation - Fixed */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#13131333] backdrop-blur-[17.5px] border-t-[0.4px] border-t-[#fdfdfd33]">
-        <div className="w-full max-w-md lg:max-w-lg xl:max-w-xl mx-auto px-6 py-6">
+        <div className="w-full max-w-md lg:max-w-lg xl:max-w-xl mx-auto px-6 py-4">
           <div className="flex justify-center items-center gap-40">
             <button className="hover:opacity-70 transition-opacity">
               <Image src="/menu.svg" alt="Menu" width={24} height={24} />
