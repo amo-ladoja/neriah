@@ -591,7 +591,7 @@ export default function ItemDetailPage() {
 
                     <div className="flex items-center gap-[12px]">
                       {/* File Icon */}
-                      <Image src="/file.svg" alt="File" width={16} height={16} />
+                      <Image src="/File.svg" alt="File" width={16} height={16} />
                       <div className="flex flex-col gap-[2px]">
                         <span
                           style={{
