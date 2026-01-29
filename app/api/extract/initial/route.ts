@@ -178,6 +178,8 @@ export async function POST(request: NextRequest) {
                 status: "pending",
                 confidence: item.confidence,
                 extraction_notes: extraction.summary,
+                has_attachment: email.attachments.length > 0,
+                attachment_ids: email.attachments.map((a) => a.filename),
               };
 
               // Type-specific fields

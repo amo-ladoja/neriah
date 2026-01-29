@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useItems } from "@/lib/hooks/useItems";
 import { markItemComplete, submitFeedback } from "@/lib/actions/items";
 import {
@@ -119,6 +120,7 @@ const ActionButton = ({
 
 interface TaskCardProps {
   item: Item;
+  onCardClick?: () => void;
   onReply?: () => void;
   onViewReceipt?: () => void;
   onSchedule?: () => void;
@@ -129,6 +131,7 @@ interface TaskCardProps {
 
 const TaskCard = ({
   item,
+  onCardClick,
   onReply,
   onViewReceipt,
   onSchedule,
@@ -182,7 +185,10 @@ const TaskCard = ({
     : "?";
 
   return (
-    <div className="relative overflow-hidden flex flex-col gap-[8px] p-2 rounded-2xl bg-[#fdfdfd05] backdrop-blur-[12px] shadow-[0_4px_24px_2px_rgba(0,0,0,0.15)]">
+    <div
+      onClick={onCardClick}
+      className="relative overflow-hidden flex flex-col gap-[8px] p-2 rounded-2xl bg-[#fdfdfd05] backdrop-blur-[12px] shadow-[0_4px_24px_2px_rgba(0,0,0,0.15)] cursor-pointer hover:bg-[#fdfdfd08] transition-colors"
+    >
       {/* Gradient border */}
       <div className="absolute inset-0 rounded-2xl p-[0.4px] pointer-events-none opacity-[0.4]"
         style={{
@@ -298,7 +304,7 @@ const TaskCard = ({
       </div>
 
       {/* Actions */}
-      <div className="flex justify-between items-center w-full mt-[4px]">
+      <div className="flex justify-between items-center w-full mt-[4px]" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center gap-2">
           {isReply && (
             <ActionButton
@@ -365,6 +371,7 @@ const TaskCard = ({
 // ============================================
 
 export default function Dashboard() {
+  const router = useRouter();
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const { items, loading, error } = useItems(activeFilter);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -578,6 +585,7 @@ export default function Dashboard() {
                 <TaskCard
                   key={item.id}
                   item={item}
+                  onCardClick={() => router.push(`/dashboard/${item.id}`)}
                   onReply={() => handleReply(item)}
                   onViewReceipt={() => {
                     /* TODO: Implement receipt viewer */
