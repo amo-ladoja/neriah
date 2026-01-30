@@ -4,11 +4,11 @@
 
 Neriah is a mobile-first web application (PWA) that extracts actionable items from Gmail using Claude AI and presents them in a clean dashboard with one-tap actions.
 
-## ✨ Current Status
+##  Current Status
 
-🚀 **MVP Implementation Complete!** All core features (P0 + P1) are implemented and ready for deployment.
+ **MVP Implementation Complete!** All core features (P0 + P1) are implemented and ready for deployment.
 
-### ✅ What's Working
+###  What's Working
 - Gmail OAuth integration with automatic token refresh
 - Claude AI extraction (tasks, receipts, meetings)
 - Background sync (manual + scheduled every 3 hours via GitHub Actions)
@@ -18,7 +18,7 @@ Neriah is a mobile-first web application (PWA) that extracts actionable items fr
 - User feedback system
 - Supabase Storage for attachments
 
-### 📚 Documentation
+###  Documentation
 
 - **[SETUP_GUIDE.md](./SETUP_GUIDE.md)** - Complete production setup guide ⭐ **START HERE**
 - [Product Requirements Document](./neriah-mvp-prd-v2.md) - Complete PRD with features and specifications
@@ -26,7 +26,7 @@ Neriah is a mobile-first web application (PWA) that extracts actionable items fr
 - [Implementation Plan](./plan.md) - Development progress and completed features
 - [User Stories](./us.json) - Feature tracking with acceptance criteria
 
-## 🚀 Quick Start
+##  Quick Start
 
 ### Prerequisites
 
@@ -103,7 +103,7 @@ Neriah is a mobile-first web application (PWA) that extracts actionable items fr
 
    Follow the complete setup guide: **[SETUP_GUIDE.md](./SETUP_GUIDE.md)**
 
-## 🏗️ Project Structure
+## Project Structure
 
 ```
 neriah/
@@ -140,7 +140,7 @@ neriah/
 └── ...config files
 ```
 
-## 🎨 Design System
+##  Design System
 
 ### Colors
 The app uses a custom dark-mode color palette with precise opacity variants:
@@ -175,7 +175,7 @@ Each color has variants at 100%, 60%, 40%, 30%, 20%, 15%, 12%, and 2% opacity fo
 - **Tags/Pills**: 12px (`rounded-xl`)
 - **Small Elements**: 2px (`rounded-sm`)
 
-## 🔧 Tech Stack
+##  Tech Stack
 
 | Component | Technology |
 |-----------|------------|
@@ -190,7 +190,7 @@ Each color has variants at 100%, 60%, 40%, 30%, 20%, 15%, 12%, and 2% opacity fo
 | **Hosting** | Vercel |
 | **PWA** | next-pwa |
 
-## 📱 PWA Configuration
+##  PWA Configuration
 
 The app is configured as a Progressive Web App:
 
@@ -198,7 +198,7 @@ The app is configured as a Progressive Web App:
 2. **Install on mobile**: Use "Add to Home Screen" in browser
 3. **Offline support**: Service worker handles offline viewing of cached items
 
-## 🧪 Development Workflow
+##  Development Workflow
 
 ### Running the app
 ```bash
@@ -217,7 +217,7 @@ The project uses **SFT Schrifted Sans** as the primary typeface:
 - Configured in `tailwind.config.ts` as the primary sans-serif font
 - All weights (400, 500, 600, 700, 900) with regular and italic variants are loaded
 
-## 🗄️ Database Setup
+##  Database Setup
 
 ### Supabase Configuration
 
@@ -233,7 +233,7 @@ The project uses **SFT Schrifted Sans** as the primary typeface:
 - `sync_logs` - Sync history
 - `receipt_attachments` - Receipt file metadata
 
-## 🔐 Environment Variables
+##  Environment Variables
 
 Required environment variables (see `.env.example`):
 
@@ -244,7 +244,7 @@ Required environment variables (see `.env.example`):
 - `GOOGLE_CLIENT_SECRET` - Google OAuth client secret
 - `ANTHROPIC_API_KEY` - Claude AI API key
 
-## 📝 User Stories Status
+##  User Stories Status
 
 Track development progress using `us.json`:
 
@@ -259,7 +259,7 @@ Before starting work:
 2. Update status to "doing"
 3. When complete, update to "done"
 
-## 🤝 Contributing
+##  Contributing
 
 1. Check the user stories in `us.json` for what needs to be done
 2. Create a feature branch
@@ -267,7 +267,7 @@ Before starting work:
 4. Test thoroughly (especially on mobile)
 5. Submit a pull request
 
-## 📄 License
+##  License
 
 Private - All rights reserved
 
