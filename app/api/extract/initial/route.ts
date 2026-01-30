@@ -83,12 +83,12 @@ export async function POST(request: NextRequest) {
     }
 
     try {
-      // Step 1: Fetch emails from Gmail (last 1 day, limit to 5 emails to avoid rate limits)
+      // Step 1: Fetch emails from Gmail (last 2 days, limit to 10 emails)
       console.log("[Extract Initial] Fetching emails from Gmail...");
-      const gmailMessages = await fetchRecentEmails(user.id, 1);
+      const gmailMessages = await fetchRecentEmails(user.id, 2);
 
-      // Limit to 5 emails to stay within API token limits
-      const limitedMessages = gmailMessages.slice(0, 5);
+      // Limit to 10 emails to stay within API token limits
+      const limitedMessages = gmailMessages.slice(0, 10);
       console.log(`[Extract Initial] Found ${gmailMessages.length} emails, processing ${limitedMessages.length}`);
 
       // Update sync log
