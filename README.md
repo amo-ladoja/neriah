@@ -20,7 +20,7 @@ Neriah is a mobile-first web application (PWA) that extracts actionable items fr
 
 ###  Documentation
 
-- **[SETUP_GUIDE.md](./SETUP_GUIDE.md)** - Complete production setup guide ⭐ **START HERE**
+- **[SETUP_GUIDE.md](./SETUP_GUIDE.md)** - Complete production setup guide  **START HERE**
 - [Product Requirements Document](./neriah-mvp-prd-v2.md) - Complete PRD with features and specifications
 - [Architecture Guide](./architecture.md) - System architecture, data flow, and scaling strategies
 - [Implementation Plan](./plan.md) - Development progress and completed features
