@@ -372,6 +372,7 @@ export function parseEmailForExtraction(message: GmailMessage) {
       filename: att.filename,
       mimeType: att.mimeType,
       size: att.size,
+      attachmentId: att.attachmentId,
     })),
     internalDate: new Date(parseInt(message.internalDate)),
   };
