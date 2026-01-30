@@ -173,6 +173,25 @@ export async function fetchRecentEmails(
 }
 
 /**
+ * Recursively search for attachment part in nested email structure
+ */
+function findAttachmentPart(
+  parts: GmailMessagePart[],
+  attachmentId: string
+): GmailMessagePart | undefined {
+  for (const part of parts) {
+    if (part.body.attachmentId === attachmentId) {
+      return part;
+    }
+    if (part.parts) {
+      const found = findAttachmentPart(part.parts, attachmentId);
+      if (found) return found;
+    }
+  }
+  return undefined;
+}
+
+/**
  * Download email attachment
  */
 export async function downloadAttachment(
@@ -202,9 +221,11 @@ export async function downloadAttachment(
   const gmailMessage = message.data as GmailMessage;
   const parts = gmailMessage.payload.parts || [];
 
-  // Find the part with this attachment
-  const attachmentPart = parts.find(
-    (part) => part.body.attachmentId === attachmentId
+  // Find the part with this attachment (recursive search for nested parts)
+  const attachmentPart = findAttachmentPart(parts, attachmentId);
+
+  console.log(
+    `[Gmail Client] Found attachment part: ${attachmentPart?.filename}, mimeType: ${attachmentPart?.mimeType}`
   );
 
   return {
