@@ -10,6 +10,7 @@ import {
   generateMeetingLink,
   openInNewTab,
 } from "@/lib/utils/gmail-links";
+import AttachmentViewer from "@/components/AttachmentViewer";
 import type { Database } from "@/lib/types/database";
 
 type Item = Database["public"]["Tables"]["items"]["Row"];
@@ -22,6 +23,8 @@ export default function ItemDetailPage() {
   const [item, setItem] = useState<Item | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [viewerOpen, setViewerOpen] = useState(false);
+  const [selectedAttachment, setSelectedAttachment] = useState<{ id: string; filename: string } | null>(null);
 
   useEffect(() => {
     async function fetchItem() {
@@ -624,9 +627,13 @@ export default function ItemDetailPage() {
 
                     <button
                       onClick={() => {
-                        // For now, open Gmail to view attachment
-                        // TODO: Implement in-app viewer for PDF/images
-                        handleReply();
+                        if (attachmentId !== "default") {
+                          setSelectedAttachment({ id: attachmentId, filename });
+                          setViewerOpen(true);
+                        } else {
+                          // Fallback: open Gmail if no real attachment ID
+                          handleReply();
+                        }
                       }}
                       className="w-[32px] h-[32px] rounded-[8px] flex items-center justify-center"
                       style={{ background: "rgba(253, 253, 253, 0.1)" }}
@@ -745,7 +752,7 @@ export default function ItemDetailPage() {
                 padding: "10px 40px",
               }}
             >
-              <Image src="/Chat.svg" alt="Reply" width={14} height={14} style={{ filter: "invert(1)" }} />
+              <Image src="/Chat.svg" alt="Reply" width={14} height={14} />
               <span
                 style={{
                   fontWeight: 700,
@@ -769,7 +776,7 @@ export default function ItemDetailPage() {
                 padding: "10px 40px",
               }}
             >
-              <Image src="/Receipt.svg" alt="Receipt" width={14} height={14} style={{ filter: "invert(1)" }} />
+              <Image src="/Receipt.svg" alt="Receipt" width={14} height={14} />
               <span
                 style={{
                   fontWeight: 700,
@@ -910,6 +917,21 @@ export default function ItemDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Attachment Viewer Modal */}
+      {selectedAttachment && (
+        <AttachmentViewer
+          isOpen={viewerOpen}
+          onClose={() => {
+            setViewerOpen(false);
+            setSelectedAttachment(null);
+          }}
+          itemId={itemId}
+          attachmentId={selectedAttachment.id}
+          filename={selectedAttachment.filename}
+          emailId={item?.email_id}
+        />
+      )}
     </div>
   );
 }

@@ -608,7 +608,7 @@ export default function Dashboard() {
 
       {/* Bottom Navigation - Fixed */}
       <div className="fixed bottom-0 left-0 right-0 z-50 bg-[#13131333] backdrop-blur-[17.5px] border-t-[0.4px] border-t-[#fdfdfd33]">
-        <div className="w-full max-w-md lg:max-w-lg xl:max-w-xl mx-auto px-6 py-2">
+        <div className="w-full max-w-md lg:max-w-lg xl:max-w-xl mx-auto px-6 py-3">
           <div className="flex justify-center items-center gap-40">
             <button className="hover:opacity-70 transition-opacity">
               <Image src="/menu.svg" alt="Menu" width={24} height={24} />
