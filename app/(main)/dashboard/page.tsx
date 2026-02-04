@@ -377,6 +377,21 @@ export default function Dashboard() {
   const { items, loading, error } = useItems(activeFilter);
   const [isSyncing, setIsSyncing] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+
+  // Filter items based on search query
+  const filteredItems = items.filter((item) => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      item.title?.toLowerCase().includes(query) ||
+      item.description?.toLowerCase().includes(query) ||
+      item.sender_name?.toLowerCase().includes(query) ||
+      item.sender_email?.toLowerCase().includes(query) ||
+      item.email_subject?.toLowerCase().includes(query)
+    );
+  });
 
   const handleSync = async () => {
     setIsSyncing(true);
@@ -503,13 +518,57 @@ export default function Dashboard() {
         </div>
 
         <div className="absolute right-2 lg:right-4 top-16">
-          <button className="flex items-center justify-center p-[9.984px] rounded-full bg-[#fdfdfd1f] backdrop-blur-[11.375px] border-[1.2px] border-[#fdfdfd33] hover:bg-[#fdfdfd26] transition-all shadow-[0_0_8px_rgba(253,253,253,0.3)]">
+          <button
+            onClick={() => setIsSearchOpen(!isSearchOpen)}
+            className="flex items-center justify-center p-[9.984px] rounded-full bg-[#fdfdfd1f] backdrop-blur-[11.375px] border-[1.2px] border-[#fdfdfd33] hover:bg-[#fdfdfd26] transition-all shadow-[0_0_8px_rgba(253,253,253,0.3)]"
+          >
             <Image src="/Search.svg" alt="Search" width={18} height={18} />
           </button>
         </div>
 
         {/* Main Content */}
-        <div className="flex flex-col gap-4 w-full">
+        <div className="flex flex-col gap-2 w-full">
+          {/* Search Input */}
+          {isSearchOpen && (
+            <div className="relative flex items-center w-full">
+              <div className="relative flex-1">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search items..."
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                      setIsSearchOpen(false);
+                      setSearchQuery("");
+                    }
+                  }}
+                  className="w-full pl-2 py-2 pr-10 rounded-xl bg-[#fdfdfd0a] backdrop-blur-[12px] border-[0.4px] border-[#fdfdfd33] text-[#fdfdfdcc] text-sm placeholder-[#fdfdfd66] focus:outline-none focus:border-[#fdfdfd66] transition-all"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-[#fdfdfd66] hover:text-[#fdfdfdcc] transition-colors"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                      <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+              <button
+                onClick={() => {
+                  setIsSearchOpen(false);
+                  setSearchQuery("");
+                }}
+                className="ml-3 text-sm text-[#fdfdfd99] hover:text-[#fdfdfdcc] transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          )}
+
           {/* Filter Section */}
           <div className="flex flex-col gap-[11.2px] w-full">
             {/* Filter Tabs */}
@@ -540,7 +599,7 @@ export default function Dashboard() {
             <div className="flex justify-between items-center pl-1 pr-1 w-full">
               <div className="flex items-center gap-1">
                 <span className="text-sm text-[#fdfdfd] tracking-[0.4px] leading-[1.67] font-medium">
-                  {items.length}
+                  {filteredItems.length}
                 </span>
                 <span className="text-sm font-medium text-[#fdfdfd99] tracking-[0.4px] leading-[1.67]">
                   items need attention
@@ -566,7 +625,7 @@ export default function Dashboard() {
           </div>
 
           {/* Task Cards */}
-          <div className="flex flex-col gap-4 w-full">
+          <div className="flex flex-col gap-2 w-full">
             {loading && (
               <div className="flex items-center justify-center py-12">
                 <div className="w-8 h-8 border-2 border-[#e8f401] border-t-transparent rounded-full animate-spin"></div>
@@ -579,15 +638,17 @@ export default function Dashboard() {
               </div>
             )}
 
-            {!loading && !error && items.length === 0 && (
+            {!loading && !error && filteredItems.length === 0 && (
               <div className="text-center py-12">
-                <p className="text-[#fdfdfd99] text-sm">No items to display</p>
+                <p className="text-[#fdfdfd99] text-sm">
+                  {searchQuery ? "No items match your search" : "No items to display"}
+                </p>
               </div>
             )}
 
             {!loading &&
               !error &&
-              items.map((item) => (
+              filteredItems.map((item) => (
                 <TaskCard
                   key={item.id}
                   item={item}
