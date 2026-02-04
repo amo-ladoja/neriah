@@ -166,7 +166,7 @@ export async function POST(request: NextRequest) {
       const itemsToInsert = [];
 
       for (const item of filteredItems) {
-        const email = item._email;
+        const email = (item as any)._email;
 
         // Skip if already exists
         if (existingEmailIds.has(email.messageId)) {
@@ -190,7 +190,7 @@ export async function POST(request: NextRequest) {
           attachment_ids: email.attachments.map((a) => a.attachmentId).filter(Boolean) as string[],
           status: "pending",
           confidence: item.confidence,
-          extraction_notes: item._summary,
+          extraction_notes: (item as any)._summary,
         };
 
         // Type-specific fields
