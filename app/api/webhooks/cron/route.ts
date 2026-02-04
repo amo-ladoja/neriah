@@ -55,11 +55,10 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    // Get all users with sync enabled who have completed initial extraction
+    // Get all users who have completed initial extraction (they want sync)
     const { data: profiles, error: profilesError } = await supabase
       .from("profiles")
       .select("id, email, last_sync_at")
-      .eq("sync_enabled", true)
       .eq("initial_extraction_completed", true);
 
     if (profilesError) {

@@ -9,7 +9,6 @@ export type Profile = {
   gmail_refresh_token: string | null;
   gmail_token_expires_at: string | null;
   initial_extraction_completed: boolean;
-  sync_enabled: boolean;
   last_sync_at: string | null;
   created_at: string;
   updated_at: string;
