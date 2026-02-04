@@ -153,11 +153,16 @@ export async function POST(request: NextRequest) {
           parsedEmails.map((email) => extractFromEmail(email))
         );
 
-        // Flatten and filter
+        // Flatten and filter - attach email metadata to each item
         const allItems = extractions
-          .flatMap((extraction) => {
+          .flatMap((extraction, emailIndex) => {
             if (!extraction) return [];
-            return extraction.items;
+            const email = parsedEmails[emailIndex];
+            return extraction.items.map((extractedItem) => ({
+              ...extractedItem,
+              _email: email,
+              _summary: extraction.summary,
+            }));
           })
           .filter((item) => item !== null);
 
@@ -180,9 +185,8 @@ export async function POST(request: NextRequest) {
         // Prepare items to insert
         const itemsToInsert = [];
 
-        for (let i = 0; i < filteredItems.length; i++) {
-          const item = filteredItems[i];
-          const email = parsedEmails[i];
+        for (const item of filteredItems) {
+          const email = (item as any)._email;
 
           if (existingEmailIds.has(email.messageId)) {
             continue;
@@ -190,9 +194,6 @@ export async function POST(request: NextRequest) {
 
           const senderName = email.from.match(/(.*?)\s*</)?.[1] || email.from;
           const senderEmail = email.from.match(/<(.+)>/)?.[1] || email.from;
-          const extraction = extractions[i];
-
-          if (!extraction) continue;
 
           // Base item data
           const itemData: any = {
@@ -204,10 +205,10 @@ export async function POST(request: NextRequest) {
             email_snippet: email.snippet,
             email_date: email.internalDate.toISOString(),
             has_attachment: email.attachments.length > 0,
-            attachment_ids: email.attachments.map((a) => a.attachmentId).filter(Boolean) as string[],
+            attachment_ids: email.attachments.map((a: any) => a.attachmentId).filter(Boolean) as string[],
             status: "pending",
             confidence: item.confidence,
-            extraction_notes: extraction.summary,
+            extraction_notes: (item as any)._summary,
           };
 
           // Type-specific fields

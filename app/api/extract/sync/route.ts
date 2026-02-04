@@ -128,11 +128,16 @@ export async function POST(request: NextRequest) {
         parsedEmails.map((email) => extractFromEmail(email))
       );
 
-      // Step 4: Flatten and filter results
+      // Step 4: Flatten and filter results - attach email metadata to each item
       const allItems = extractions
-        .flatMap((extraction) => {
+        .flatMap((extraction, emailIndex) => {
           if (!extraction) return [];
-          return extraction.items;
+          const email = parsedEmails[emailIndex];
+          return extraction.items.map((extractedItem) => ({
+            ...extractedItem,
+            _email: email,
+            _summary: extraction.summary,
+          }));
         })
         .filter((item) => item !== null);
 
@@ -160,9 +165,8 @@ export async function POST(request: NextRequest) {
       // Step 6: Store new items in database
       const itemsToInsert = [];
 
-      for (let i = 0; i < filteredItems.length; i++) {
-        const item = filteredItems[i];
-        const email = parsedEmails[i];
+      for (const item of filteredItems) {
+        const email = (item as any)._email;
 
         // Skip if already exists
         if (existingEmailIds.has(email.messageId)) {
@@ -171,11 +175,7 @@ export async function POST(request: NextRequest) {
         }
 
         const senderName = email.from.match(/(.*?)\s*</)?.[1] || email.from;
-        const senderEmail =
-          email.from.match(/<(.+)>/)?.[1] || email.from;
-
-        const extraction = extractions[i];
-        if (!extraction) continue;
+        const senderEmail = email.from.match(/<(.+)>/)?.[1] || email.from;
 
         // Base item data
         const itemData: any = {
@@ -187,10 +187,10 @@ export async function POST(request: NextRequest) {
           email_snippet: email.snippet,
           email_date: email.internalDate.toISOString(),
           has_attachment: email.attachments.length > 0,
-          attachment_ids: email.attachments.map((a) => a.attachmentId).filter(Boolean) as string[],
+          attachment_ids: email.attachments.map((a: any) => a.attachmentId).filter(Boolean) as string[],
           status: "pending",
           confidence: item.confidence,
-          extraction_notes: extraction.summary,
+          extraction_notes: (item as any)._summary,
         };
 
         // Type-specific fields
@@ -212,7 +212,7 @@ export async function POST(request: NextRequest) {
             invoiceNumber: item.invoiceNumber,
           };
           if (item.invoiceNumber) {
-            itemData.extraction_notes = `${extraction.summary} | Invoice: ${item.invoiceNumber}`;
+            itemData.extraction_notes = `${(item as any)._summary} | Invoice: ${item.invoiceNumber}`;
           }
         } else if (item.type === "meeting") {
           itemData.category = "meeting";
