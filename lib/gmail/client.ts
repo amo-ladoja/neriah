@@ -44,6 +44,35 @@ export interface EmailAttachment {
 }
 
 /**
+ * Get file extension from MIME type
+ */
+function getExtensionFromMimeType(mimeType: string): string {
+  const mimeToExt: Record<string, string> = {
+    "application/pdf": ".pdf",
+    "image/jpeg": ".jpg",
+    "image/jpg": ".jpg",
+    "image/png": ".png",
+    "image/gif": ".gif",
+    "image/webp": ".webp",
+    "text/plain": ".txt",
+    "text/html": ".html",
+    "text/csv": ".csv",
+    "application/msword": ".doc",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ".docx",
+    "application/vnd.ms-excel": ".xls",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ".xlsx",
+    "application/vnd.ms-powerpoint": ".ppt",
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation": ".pptx",
+    "application/zip": ".zip",
+    "application/x-zip-compressed": ".zip",
+    "application/json": ".json",
+    "application/xml": ".xml",
+    "application/octet-stream": "",
+  };
+  return mimeToExt[mimeType] || "";
+}
+
+/**
  * Create Gmail API client with user's OAuth tokens
  */
 export async function createGmailClient(userId: string) {
@@ -224,13 +253,34 @@ export async function downloadAttachment(
   // Find the part with this attachment (recursive search for nested parts)
   const attachmentPart = findAttachmentPart(parts, attachmentId);
 
+  // Determine mimeType - use attachment part or default
+  const mimeType = attachmentPart?.mimeType || "application/octet-stream";
+
+  // Determine filename with proper extension
+  let filename = attachmentPart?.filename || "";
+
+  // If no filename or filename has no extension, generate one from mimeType
+  if (!filename || !filename.includes(".")) {
+    const ext = getExtensionFromMimeType(mimeType);
+    if (filename && ext) {
+      // Has name but no extension - add extension
+      filename = filename + ext;
+    } else if (ext) {
+      // No name - use default with extension
+      filename = `attachment${ext}`;
+    } else {
+      // No extension available - use generic
+      filename = filename || "attachment";
+    }
+  }
+
   console.log(
-    `[Gmail Client] Found attachment part: ${attachmentPart?.filename}, mimeType: ${attachmentPart?.mimeType}`
+    `[Gmail Client] Found attachment part: ${attachmentPart?.filename}, mimeType: ${mimeType}, final filename: ${filename}`
   );
 
   return {
-    filename: attachmentPart?.filename || "attachment",
-    mimeType: attachmentPart?.mimeType || "application/octet-stream",
+    filename,
+    mimeType,
     size: attachment.data.size || 0,
     data: attachment.data.data || "",
   };
