@@ -205,7 +205,7 @@ export async function POST(request: NextRequest) {
             email_snippet: email.snippet,
             email_date: email.internalDate.toISOString(),
             has_attachment: email.attachments.length > 0,
-            attachment_ids: email.attachments.map((a) => a.attachmentId).filter(Boolean) as string[],
+            attachment_ids: email.attachments.map((a: any) => a.attachmentId).filter(Boolean) as string[],
             status: "pending",
             confidence: item.confidence,
             extraction_notes: (item as any)._summary,
