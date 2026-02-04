@@ -46,8 +46,13 @@ export async function GET(
       params.attachmentId
     );
 
-    // Decode base64 data
-    const binaryData = Buffer.from(attachment.data, "base64");
+    console.log("[Attachment API] mimeType:", attachment.mimeType);
+    console.log("[Attachment API] filename:", attachment.filename);
+    console.log("[Attachment API] data length:", attachment.data?.length);
+
+    // Convert URL-safe base64 to standard base64 (Gmail uses - and _ instead of + and /)
+    const base64Data = attachment.data.replace(/-/g, "+").replace(/_/g, "/");
+    const binaryData = Buffer.from(base64Data, "base64");
 
     // Return the file with appropriate headers
     return new NextResponse(binaryData, {
