@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
-import { markItemComplete, deleteItem, submitFeedback } from "@/lib/actions/items";
+import { markItemComplete, deleteItem, submitFeedback, snoozeItem } from "@/lib/actions/items";
 import {
   generateReplyLink,
   generateMeetingLink,
@@ -115,6 +115,16 @@ export default function ItemDetailPage() {
     if (!item) return;
     await submitFeedback(item.id, helpful);
     setItem({ ...item, user_feedback: helpful ? "positive" : "negative" });
+  };
+
+  const handleSnooze = async () => {
+    if (!item) return;
+    // Snooze for 3 hours
+    const snoozeUntil = new Date(Date.now() + 3 * 60 * 60 * 1000);
+    const result = await snoozeItem(item.id, snoozeUntil);
+    if (!result.error) {
+      router.push("/dashboard");
+    }
   };
 
   if (loading) {
@@ -819,6 +829,7 @@ export default function ItemDetailPage() {
           <div className="flex items-center gap-[15px]">
             {/* Snooze */}
             <button
+              onClick={handleSnooze}
               className="relative flex items-center justify-center gap-[8px] flex-1"
               style={{
                 padding: "10px 28px",

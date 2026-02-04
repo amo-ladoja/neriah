@@ -21,11 +21,12 @@ export function useItems(filter: FilterType = "all") {
         setLoading(true);
         setError(null);
 
-        // Build query
+        // Build query - show pending items and snoozed items that have "woken up"
+        const now = new Date().toISOString();
         let query = supabase
           .from("items")
           .select("*")
-          .eq("status", "pending")
+          .or(`status.eq.pending,and(status.eq.snoozed,snoozed_until.lte.${now})`)
           .order("priority", { ascending: false })
           .order("email_date", { ascending: false });
 
