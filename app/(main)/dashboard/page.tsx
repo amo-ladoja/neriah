@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useItems } from "@/lib/hooks/useItems";
+import { usePushNotifications } from "@/lib/hooks/usePushNotifications";
 import { markItemComplete, submitFeedback } from "@/lib/actions/items";
 import { signOut } from "@/lib/actions/auth";
 import {
@@ -14,7 +15,7 @@ import {
 import type { Database } from "@/lib/types/database";
 
 type Item = Database["public"]["Tables"]["items"]["Row"];
-type FilterType = "all" | "tasks" | "receipts" | "meetings";
+type FilterType = "all" | "tasks" | "receipts" | "meetings" | "snoozed";
 
 // ============================================
 // Utility Components
@@ -379,6 +380,12 @@ export default function Dashboard() {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const { subscribed, subscribe, clearBadge } = usePushNotifications();
+
+  // Clear badge count when dashboard is opened
+  useEffect(() => {
+    clearBadge();
+  }, []);
 
   // Filter items based on search query
   const filteredItems = items.filter((item) => {
@@ -495,9 +502,14 @@ export default function Dashboard() {
                   <Image src="/account.svg" alt="Account" width={20} height={20} />
                   <span>Account</span>
                 </button>
-                <button className="flex items-center gap-[16px] text-[16px] text-[#fdfdfdcc] hover:text-[#fdfdfd] transition-colors">
+                <button
+                  onClick={async () => {
+                    if (!subscribed) await subscribe();
+                  }}
+                  className="flex items-center gap-[16px] text-[16px] text-[#fdfdfdcc] hover:text-[#fdfdfd] transition-colors"
+                >
                   <Image src="/notification.svg" alt="Notifications" width={20} height={20} />
-                  <span>Notifications</span>
+                  <span>{subscribed ? "Notifications On" : "Enable Notifications"}</span>
                 </button>
                 <button className="flex items-center gap-[16px] text-[16px] text-[#fdfdfdcc] hover:text-[#fdfdfd] transition-colors">
                   <Image src="/about.svg" alt="About" width={20} height={20} />
@@ -572,7 +584,7 @@ export default function Dashboard() {
           {/* Filter Section */}
           <div className="flex flex-col gap-[11.2px] w-full">
             {/* Filter Tabs */}
-            <div className="flex items-center gap-[11.6886px] overflow-x-auto no-scrollbar pb-1">
+            <div className="flex items-center gap-[11.6886px] overflow-x-auto no-scrollbar pb-1 -mx-2 lg:-mx-4 px-2 lg:px-4">
               <Tag
                 label="All"
                 variant={activeFilter === "all" ? "active" : "default"}
@@ -592,6 +604,11 @@ export default function Dashboard() {
                 label="Meetings"
                 variant={activeFilter === "meetings" ? "active" : "default"}
                 onClick={() => setActiveFilter("meetings")}
+              />
+              <Tag
+                label="Snoozed"
+                variant={activeFilter === "snoozed" ? "active" : "default"}
+                onClick={() => setActiveFilter("snoozed")}
               />
             </div>
 

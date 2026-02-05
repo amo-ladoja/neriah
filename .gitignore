@@ -72,3 +72,6 @@ SETUP_GOOGLE_OAUTH.md
 SETUP_GUIDE.md
 remotion.config.ts
 SETUP_GOOGLE_OAUTH.md
+supabase-migration-push-subscriptions.sql
+.env.example
+.env.example

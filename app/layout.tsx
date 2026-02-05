@@ -16,6 +16,10 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "Neriah",
   },
+  icons: {
+    icon: "/0_5_bb.png",
+    apple: "/0_5_bb.png",
+  },
 };
 
 export default function RootLayout({
@@ -27,8 +31,6 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <head>
         <meta name="format-detection" content="telephone=no, email=no, address=no" />
-        <link rel="icon" href="/neriah_box.svg" type="image/svg+xml" />
-        <link rel="apple-touch-icon" href="/neriah_box.svg" />
       </head>
       <body className="antialiased font-sans bg-background">
         {children}
