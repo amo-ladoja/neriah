@@ -76,3 +76,4 @@ supabase-migration-push-subscriptions.sql
 .env.example
 .env.example
 .env.example
+.env.example
