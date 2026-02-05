@@ -255,6 +255,17 @@ export async function POST(request: NextRequest) {
         `[Extract Initial] Extraction complete: ${totalItemsCreated} items created`
       );
 
+      // Send push notification
+      if (totalItemsCreated > 0) {
+        const { sendPushToUser } = await import("@/lib/push");
+        await sendPushToUser(user.id, {
+          title: "Neriah",
+          body: `${totalItemsCreated} new item${totalItemsCreated > 1 ? "s" : ""} extracted from your emails`,
+          badge: totalItemsCreated,
+          url: "/dashboard",
+        });
+      }
+
       // Step 5: Update sync log and profile
       await supabase
         .from("sync_logs")

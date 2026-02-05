@@ -245,6 +245,17 @@ export async function POST(request: NextRequest) {
 
         insertedCount = itemsToInsert.length;
         console.log(`[Sync] Inserted ${insertedCount} new items`);
+
+        // Send push notification
+        if (insertedCount > 0) {
+          const { sendPushToUser } = await import("@/lib/push");
+          await sendPushToUser(user.id, {
+            title: "Neriah",
+            body: `${insertedCount} new item${insertedCount > 1 ? "s" : ""} found in your emails`,
+            badge: insertedCount,
+            url: "/dashboard",
+          });
+        }
       } else {
         console.log("[Sync] No new items to insert (all were duplicates)");
       }

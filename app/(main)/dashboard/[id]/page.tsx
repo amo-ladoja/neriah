@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
-import { markItemComplete, deleteItem, submitFeedback } from "@/lib/actions/items";
+import { markItemComplete, deleteItem, submitFeedback, snoozeItem } from "@/lib/actions/items";
 import {
   generateReplyLink,
   generateMeetingLink,
@@ -115,6 +115,34 @@ export default function ItemDetailPage() {
     if (!item) return;
     await submitFeedback(item.id, helpful);
     setItem({ ...item, user_feedback: helpful ? "positive" : "negative" });
+  };
+
+  const [showSnoozeMenu, setShowSnoozeMenu] = useState(false);
+
+  const getSnoozeUntil = (option: "3hrs" | "tomorrow" | "nextweek") => {
+    if (option === "3hrs") {
+      return new Date(Date.now() + 3 * 60 * 60 * 1000);
+    } else if (option === "tomorrow") {
+      const d = new Date();
+      d.setDate(d.getDate() + 1);
+      d.setHours(9, 0, 0, 0);
+      return d;
+    } else {
+      const d = new Date();
+      const daysUntilMonday = ((8 - d.getDay()) % 7) || 7;
+      d.setDate(d.getDate() + daysUntilMonday);
+      d.setHours(9, 0, 0, 0);
+      return d;
+    }
+  };
+
+  const handleSnooze = async (option: "3hrs" | "tomorrow" | "nextweek") => {
+    if (!item) return;
+    const snoozeUntil = getSnoozeUntil(option);
+    const result = await snoozeItem(item.id, snoozeUntil);
+    if (!result.error) {
+      router.push("/dashboard");
+    }
   };
 
   if (loading) {
@@ -818,36 +846,66 @@ export default function ItemDetailPage() {
           {/* Secondary Action Buttons */}
           <div className="flex items-center gap-[15px]">
             {/* Snooze */}
-            <button
-              className="relative flex items-center justify-center gap-[8px] flex-1"
-              style={{
-                padding: "10px 28px",
-                borderRadius: 16,
-              }}
-            >
-              <div
-                className="absolute inset-0 rounded-[16px] pointer-events-none"
+            <div className="relative flex-1">
+              <button
+                onClick={() => setShowSnoozeMenu(!showSnoozeMenu)}
+                className="relative flex items-center justify-center gap-[8px] w-full"
                 style={{
-                  padding: 1,
-                  background: "linear-gradient(119deg, rgba(253,253,253,0.6) 0%, rgba(202,202,202,0.6) 57%, rgba(151,151,151,0.6) 100%)",
-                  WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
-                  WebkitMaskComposite: "xor",
-                  maskComposite: "exclude",
-                }}
-              />
-              <Image src="/snooze.svg" alt="Snooze" width={14} height={14} />
-              <span
-                style={{
-                  fontWeight: 500,
-                  fontSize: 12,
-                  lineHeight: "1.19em",
-                  letterSpacing: "0.4px",
-                  color: "#FFFFFF",
+                  padding: "10px 28px",
+                  borderRadius: 16,
                 }}
               >
-                Snooze
-              </span>
-            </button>
+                <div
+                  className="absolute inset-0 rounded-[16px] pointer-events-none"
+                  style={{
+                    padding: 1,
+                    background: "linear-gradient(119deg, rgba(253,253,253,0.6) 0%, rgba(202,202,202,0.6) 57%, rgba(151,151,151,0.6) 100%)",
+                    WebkitMask: "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+                    WebkitMaskComposite: "xor",
+                    maskComposite: "exclude",
+                  }}
+                />
+                <Image src="/snooze.svg" alt="Snooze" width={14} height={14} />
+                <span
+                  style={{
+                    fontWeight: 500,
+                    fontSize: 12,
+                    lineHeight: "1.19em",
+                    letterSpacing: "0.4px",
+                    color: "#FFFFFF",
+                  }}
+                >
+                  Snooze
+                </span>
+              </button>
+
+              {showSnoozeMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowSnoozeMenu(false)} />
+                  <div
+                    className="absolute bottom-full left-0 right-0 mb-1 z-50 flex flex-col gap-0.5 p-1 rounded-xl border-[0.4px] border-[#fdfdfd33]"
+                    style={{
+                      backgroundColor: "rgba(30, 30, 30, 0.9)",
+                      backdropFilter: "blur(12px)",
+                    }}
+                  >
+                    {[
+                      { key: "3hrs" as const, label: "3 hours" },
+                      { key: "tomorrow" as const, label: "Tomorrow 9am" },
+                      { key: "nextweek" as const, label: "Next week" },
+                    ].map((opt) => (
+                      <button
+                        key={opt.key}
+                        onClick={() => handleSnooze(opt.key)}
+                        className="px-3 py-2 rounded-lg text-left text-[12px] font-medium text-[#fdfdfdcc] hover:bg-[#fdfdfd1f] transition-colors"
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
 
             {/* Done */}
             <button

@@ -257,6 +257,17 @@ export async function POST(request: NextRequest) {
           }
 
           insertedCount = itemsToInsert.length;
+
+          // Send push notification
+          if (insertedCount > 0) {
+            const { sendPushToUser } = await import("@/lib/push");
+            await sendPushToUser(profile.id, {
+              title: "Neriah",
+              body: `${insertedCount} new item${insertedCount > 1 ? "s" : ""} extracted`,
+              badge: insertedCount,
+              url: "/dashboard",
+            });
+          }
         }
 
         // Update sync log

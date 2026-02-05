@@ -114,9 +114,9 @@ export default function AttachmentViewer({
         <div className="flex items-center gap-3">
           <button
             onClick={onClose}
-            className="flex items-center justify-center p-2 rounded-full bg-[#fdfdfd1f] backdrop-blur-[11.375px] border-[1.2px] border-[#fdfdfd33] hover:bg-[#fdfdfd26] transition-all"
+            className="flex items-center justify-center p-[9.984px] rounded-full bg-[#fdfdfd1f] backdrop-blur-[11.375px] border-[1.2px] border-[#fdfdfd33] hover:bg-[#fdfdfd26] transition-all"
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
               <path
                 d="M18 6L6 18M6 6L18 18"
                 stroke="white"
@@ -140,7 +140,7 @@ export default function AttachmentViewer({
         {blobUrl && (
           <button
             onClick={handleDownload}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#E8F401] text-[#131313] font-semibold text-sm hover:bg-[#E8F401]/90 transition-all"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#E8F401] text-[#131313] font-semibold text-sm hover:bg-[#E8F401]/90 transition-all"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
               <path
@@ -157,7 +157,7 @@ export default function AttachmentViewer({
       </div>
 
       {/* Content */}
-      <div className="w-full h-full flex items-center justify-center pt-16 pb-4 px-4">
+      <div className="w-full h-full flex flex-col items-center justify-start pt-[82px] pb-4 px-4">
         {/* Loading state */}
         {loading && (
           <div className="flex flex-col items-center gap-4">
@@ -206,8 +206,8 @@ export default function AttachmentViewer({
                 <object
                   data={blobUrl}
                   type="application/pdf"
-                  className="w-full h-full rounded-lg"
-                  style={{ backgroundColor: "white" }}
+                  className="w-full flex-1 rounded-lg"
+                  style={{ backgroundColor: "white", minHeight: 0 }}
                 >
                   {/* Fallback if object tag doesn't work */}
                   <div className="flex flex-col items-center gap-4 p-8">
@@ -219,7 +219,7 @@ export default function AttachmentViewer({
                 {/* Always show Open in New Tab button for PDFs */}
                 <button
                   onClick={() => window.open(blobUrl, "_blank")}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl border border-[#fdfdfd33] text-white text-sm hover:bg-[#fdfdfd1f] transition-all"
+                  className="flex items-center gap-2 px-4 py-2 rounded-full border border-[#fdfdfd33] text-white text-sm hover:bg-[#fdfdfd1f] transition-all"
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
                     <path
