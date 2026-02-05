@@ -40,7 +40,7 @@ export function usePushNotifications() {
       userVisibleOnly: true,
       applicationServerKey: urlBase64ToUint8Array(
         process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!
-      ),
+      ).buffer as ArrayBuffer,
     });
 
     const serialized = sub.toJSON();
