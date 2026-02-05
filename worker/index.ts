@@ -1,6 +1,10 @@
-declare const self: ServiceWorkerGlobalScope;
+/// <reference lib="webworker" />
 
-self.addEventListener("push", (event) => {
+/* eslint-disable no-restricted-globals */
+
+const sw = self as unknown as ServiceWorkerGlobalScope;
+
+sw.addEventListener("push", (event) => {
   if (!event.data) return;
 
   const data = event.data.json();
@@ -11,12 +15,11 @@ self.addEventListener("push", (event) => {
     badge: "/0_5_bb.png",
     data: { url: data.url || "/dashboard" },
     tag: "neriah-notification",
-    renotify: true,
   };
 
   event.waitUntil(
     Promise.all([
-      self.registration.showNotification(data.title || "Neriah", options),
+      sw.registration.showNotification(data.title || "Neriah", options),
       data.badge !== undefined && "setAppBadge" in navigator
         ? (navigator as unknown as { setAppBadge: (count: number) => Promise<void> }).setAppBadge(data.badge)
         : Promise.resolve(),
@@ -24,12 +27,12 @@ self.addEventListener("push", (event) => {
   );
 });
 
-self.addEventListener("notificationclick", (event) => {
+sw.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const url = event.notification.data?.url || "/dashboard";
 
   event.waitUntil(
-    (self as unknown as { clients: Clients }).clients
+    sw.clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((clientList) => {
         for (const client of clientList) {
@@ -37,7 +40,7 @@ self.addEventListener("notificationclick", (event) => {
             return (client as WindowClient).focus();
           }
         }
-        return (self as unknown as { clients: Clients }).clients.openWindow(url);
+        return sw.clients.openWindow(url);
       })
   );
 });

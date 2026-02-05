@@ -383,9 +383,8 @@ export default function Dashboard() {
   const { subscribed, subscribe, clearBadge } = usePushNotifications();
 
   // Clear badge count when dashboard is opened
-  useEffect(() => {
-    clearBadge();
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { clearBadge(); }, []);
 
   // Filter items based on search query
   const filteredItems = items.filter((item) => {
