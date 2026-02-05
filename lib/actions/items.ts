@@ -114,6 +114,50 @@ export async function deleteItem(itemId: string) {
 }
 
 /**
+ * Delete all data for the current user
+ */
+export async function deleteAllUserData() {
+  try {
+    const supabase = await createClient();
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return { error: "Unauthorized" };
+    }
+
+    // Delete all items
+    await supabase.from("items").delete().eq("user_id", user.id);
+
+    // Delete push subscriptions
+    await supabase.from("push_subscriptions").delete().eq("user_id", user.id);
+
+    // Delete sync logs
+    await supabase.from("sync_logs").delete().eq("user_id", user.id);
+
+    // Reset profile
+    await supabase
+      .from("profiles")
+      .update({
+        initial_extraction_completed: false,
+        last_sync_at: null,
+      })
+      .eq("id", user.id);
+
+    revalidatePath("/dashboard");
+    return { success: true };
+  } catch (error) {
+    console.error("[deleteAllUserData] Error:", error);
+    return {
+      error:
+        error instanceof Error ? error.message : "Failed to delete user data",
+    };
+  }
+}
+
+/**
  * Submit feedback for an item
  */
 export async function submitFeedback(

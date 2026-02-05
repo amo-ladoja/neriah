@@ -514,7 +514,14 @@ export default function Dashboard() {
                   <Image src="/about.svg" alt="About" width={20} height={20} />
                   <span>About</span>
                 </button>
-                <button 
+                <button
+                  onClick={() => router.push("/data")}
+                  className="flex items-center gap-[16px] text-[16px] text-[#fdfdfdcc] hover:text-[#fdfdfd] transition-colors"
+                >
+                  <Image src="/data.svg" alt="Data" width={20} height={20} />
+                  <span>Data</span>
+                </button>
+                <button
                   onClick={async () => {
                     await signOut();
                   }}
