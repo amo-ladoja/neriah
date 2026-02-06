@@ -147,7 +147,7 @@ export default function ItemDetailPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#1E1E1E] flex items-center justify-center">
+      <div className="min-h-screen bg-[#131313] flex items-center justify-center">
         <div className="w-8 h-8 border-2 border-[#E8F401] border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -155,7 +155,7 @@ export default function ItemDetailPage() {
 
   if (error || !item) {
     return (
-      <div className="min-h-screen bg-[#1E1E1E] flex flex-col items-center justify-center gap-4">
+      <div className="min-h-screen bg-[#131313] flex flex-col items-center justify-center gap-4">
         <p className="text-[rgba(253,253,253,0.6)] text-[12px]">{error || "Item not found"}</p>
         <button onClick={() => router.push("/dashboard")} className="text-[#E8F401] text-[12px] no-underline">
           Back to dashboard
@@ -172,7 +172,7 @@ export default function ItemDetailPage() {
   return (
     <div
       className="relative min-h-screen overflow-x-hidden"
-      style={{ backgroundColor: "#1E1E1E", backdropFilter: "blur(24px)" }}
+      style={{ backgroundColor: "#131313", backdropFilter: "blur(24px)" }}
     >
       {/* Background Blur Effects - Extended beyond viewport */}
       <div

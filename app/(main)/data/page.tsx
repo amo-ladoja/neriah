@@ -200,34 +200,33 @@ export default function DataPage() {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center min-h-screen px-[39px] pb-10 pt-16">
-        {/* Back Button */}
-        <button
-          onClick={() => router.back()}
-          className="absolute top-[17px] left-[17px] flex items-center justify-center w-10 h-10 rounded-full"
-          style={{
-            backgroundColor: "rgba(30, 30, 30, 0.6)",
-            backdropFilter: "blur(12px)",
-          }}
-        >
-          <Image src="/CaretLeft.svg" alt="Back" width={16} height={16} />
-        </button>
-
-        {/* Header */}
-        <div className="flex flex-col items-center gap-2 mb-4">
-          <Image
-            src="/neriah-white.svg"
-            alt="Neriah"
-            width={92}
-            height={24}
-            className="h-4 w-auto"
-          />
-          <span
-            className="text-xs font-semibold tracking-[0.25em] text-center"
-            style={{ color: "rgba(253, 253, 253, 0.8)" }}
+      <div className="relative z-10 flex flex-col items-center w-full max-w-[402px] mx-auto px-2 lg:px-4 pb-10 pt-[64px]">
+        {/* Header Row - Back Button + Logo */}
+        <div className="w-full flex items-start mb-4">
+          {/* Back Button */}
+          <button
+            onClick={() => router.back()}
+            className="flex items-center justify-center p-[9.984px] rounded-full bg-[#fdfdfd1f] backdrop-blur-[11.375px] border-[1.2px] border-[#fdfdfd33] hover:bg-[#fdfdfd26] transition-all shadow-[0_0_8px_rgba(253,253,253,0.3)]"
           >
-            USER PRIVACY NOTICE
-          </span>
+            <Image src="/CaretLeft.svg" alt="Back" width={18} height={18} />
+          </button>
+
+          {/* Header - Centered */}
+          <div className="flex-1 flex flex-col items-center gap-2 -ml-[38px] pt-[8px]">
+            <Image
+              src="/neriah-white.svg"
+              alt="Neriah"
+              width={92}
+              height={24}
+              className="h-4 w-auto"
+            />
+            <span
+              className="text-xs font-semibold tracking-[0.25em] text-center"
+              style={{ color: "rgba(253, 253, 253, 0.8)" }}
+            >
+              USER PRIVACY NOTICE
+            </span>
+          </div>
         </div>
 
         {/* Subtitle */}
