@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
@@ -25,6 +25,8 @@ export default function ItemDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [viewerOpen, setViewerOpen] = useState(false);
   const [selectedAttachment, setSelectedAttachment] = useState<{ id: string; filename: string } | null>(null);
+  const [undoCountdown, setUndoCountdown] = useState<number | null>(null);
+  const undoIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     async function fetchItem() {
@@ -95,12 +97,42 @@ export default function ItemDetailPage() {
     openInNewTab(link);
   };
 
-  const handleMarkComplete = async () => {
+  const completeItem = useCallback(async () => {
     if (!item) return;
     const result = await markItemComplete(item.id);
     if (!result.error) {
       router.push("/dashboard");
     }
+  }, [item, router]);
+
+  const handleMarkComplete = () => {
+    if (!item || undoCountdown !== null) return;
+
+    // Start 5 second countdown
+    setUndoCountdown(5);
+
+    undoIntervalRef.current = setInterval(() => {
+      setUndoCountdown((prev) => {
+        if (prev === null || prev <= 1) {
+          // Countdown finished, complete the item
+          if (undoIntervalRef.current) {
+            clearInterval(undoIntervalRef.current);
+            undoIntervalRef.current = null;
+          }
+          completeItem();
+          return null;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const handleUndo = () => {
+    if (undoIntervalRef.current) {
+      clearInterval(undoIntervalRef.current);
+      undoIntervalRef.current = null;
+    }
+    setUndoCountdown(null);
   };
 
   const handleDelete = async () => {
@@ -780,7 +812,7 @@ export default function ItemDetailPage() {
                 padding: "10px 40px",
               }}
             >
-              <Image src="/Chat.svg" alt="Reply" width={14} height={14} />
+              <Image src="/Chat-dark.svg" alt="Reply" width={14} height={14} />
               <span
                 style={{
                   fontWeight: 700,
@@ -989,6 +1021,73 @@ export default function ItemDetailPage() {
           filename={selectedAttachment.filename}
           emailId={item?.email_id}
         />
+      )}
+
+      {/* Undo Toast */}
+      {undoCountdown !== null && (
+        <div className="fixed bottom-[120px] left-1/2 -translate-x-1/2 z-50">
+          <button
+            onClick={handleUndo}
+            className="flex items-center gap-[12px] px-[16px] py-[10px] rounded-full"
+            style={{
+              backgroundColor: "rgba(30, 30, 30, 0.95)",
+              backdropFilter: "blur(12px)",
+              border: "0.4px solid rgba(253, 253, 253, 0.2)",
+            }}
+          >
+            {/* Countdown Circle */}
+            <div className="relative w-[32px] h-[32px]">
+              <svg
+                className="w-full h-full -rotate-90"
+                viewBox="0 0 32 32"
+              >
+                {/* Background circle */}
+                <circle
+                  cx="16"
+                  cy="16"
+                  r="13"
+                  fill="none"
+                  stroke="#808080"
+                  strokeWidth="3"
+                />
+                {/* Progress circle */}
+                <circle
+                  cx="16"
+                  cy="16"
+                  r="13"
+                  fill="none"
+                  stroke="#E8F401"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeDasharray={2 * Math.PI * 13}
+                  strokeDashoffset={2 * Math.PI * 13 * (1 - undoCountdown / 5)}
+                  style={{ transition: "stroke-dashoffset 1s linear" }}
+                />
+              </svg>
+              {/* Countdown number */}
+              <span
+                className="absolute inset-0 flex items-center justify-center"
+                style={{
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: "#FFFFFF",
+                }}
+              >
+                {undoCountdown}
+              </span>
+            </div>
+            {/* Undo text */}
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 500,
+                color: "#FFFFFF",
+              }}
+            >
+              Undo
+            </span>
+          </button>
+        </div>
       )}
     </div>
   );
