@@ -30,6 +30,33 @@ function normalizePriority(priority: string): "urgent" | "high" | "medium" | "lo
   return "medium";
 }
 
+// Helper function to unsnooze expired items
+async function unsnoozeExpiredItems(supabase: any) {
+  const now = new Date().toISOString();
+
+  const { data: unsnoozedItems, error } = await supabase
+    .from("items")
+    .update({
+      status: "pending",
+      snoozed_until: null,
+    })
+    .eq("status", "snoozed")
+    .lte("snoozed_until", now)
+    .select("user_id");
+
+  if (error) {
+    console.error("[Cron] Error unsnoozing items:", error);
+    return 0;
+  }
+
+  const count = unsnoozedItems?.length || 0;
+  if (count > 0) {
+    console.log(`[Cron] Unsnoozed ${count} expired items`);
+  }
+
+  return count;
+}
+
 export async function POST(request: NextRequest) {
   try {
     // Verify cron secret (optional extra security)
@@ -54,6 +81,9 @@ export async function POST(request: NextRequest) {
         },
       }
     );
+
+    // Unsnooze expired items
+    await unsnoozeExpiredItems(supabase);
 
     // Get all users who have completed initial extraction (they want sync)
     const { data: profiles, error: profilesError } = await supabase
