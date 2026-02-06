@@ -457,7 +457,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#1e1e1e] overflow-hidden pb-32">
+    <div className="relative min-h-screen bg-[#131313] overflow-hidden pb-32">
       {/* Background Gradient Effects - Extended beyond viewport */}
       <div className="absolute w-[231px] h-[231px] rounded-full bg-[#0606064d] blur-[175px] -left-[71px] top-[473px]" />
       <div className="absolute w-[231px] h-[231px] rounded-full bg-[#0606064d] blur-[175px] right-[139px] -top-[100px]" />
@@ -508,13 +508,16 @@ export default function Dashboard() {
                   className="flex items-center gap-[16px] text-[16px] text-[#fdfdfdcc] hover:text-[#fdfdfd] transition-colors"
                 >
                   <Image src="/notification.svg" alt="Notifications" width={20} height={20} />
-                  <span>{subscribed ? "Notifications On" : "Enable Notifications"}</span>
+                  <span>Notifications</span>
                 </button>
-                <button className="flex items-center gap-[16px] text-[16px] text-[#fdfdfdcc] hover:text-[#fdfdfd] transition-colors">
-                  <Image src="/about.svg" alt="About" width={20} height={20} />
-                  <span>About</span>
+                <button
+                  onClick={() => router.push("/data")}
+                  className="flex items-center gap-[16px] text-[16px] text-[#fdfdfdcc] hover:text-[#fdfdfd] transition-colors"
+                >
+                  <Image src="/data.svg" alt="Data" width={20} height={20} />
+                  <span>Data</span>
                 </button>
-                <button 
+                <button
                   onClick={async () => {
                     await signOut();
                   }}
