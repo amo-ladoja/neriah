@@ -205,6 +205,86 @@
       "completedCriteria": 2,
       "totalCriteria": 5,
       "notes": "Thumbs up/down buttons and API endpoint working. Feedback saved to database. Need: Comment field, visual confirmation toast, ability to change feedback"
+    },
+    {
+      "id": "US-12",
+      "title": "Query Dashboard via Chat",
+      "priority": "P1",
+      "persona": "Neriah user",
+      "action": "ask questions about my items in natural language",
+      "benefit": "I can quickly find specific information without manual filtering",
+      "acceptanceCriteria": [
+        "❌ Chat icon accessible in bottom navigation",
+        "❌ Can type natural language queries (e.g., \"What are my urgent tasks?\")",
+        "❌ AI returns relevant items from dashboard data",
+        "❌ Results display as tappable item cards in chat",
+        "❌ Can tap items to open full detail view",
+        "❌ Conversation history maintained within session"
+      ],
+      "status": "pending",
+      "completedCriteria": 0,
+      "totalCriteria": 6,
+      "notes": ""
+    },
+    {
+      "id": "US-13",
+      "title": "Get Spending Insights via Chat",
+      "priority": "P1",
+      "persona": "Neriah user",
+      "action": "ask about my spending and receipt totals",
+      "benefit": "I can understand my expenses without manual calculation",
+      "acceptanceCriteria": [
+        "❌ Can ask \"How much did I spend last month?\"",
+        "❌ Can filter by category (e.g., \"Total software expenses?\")",
+        "❌ Can filter by vendor (e.g., \"How much have I paid AWS?\")",
+        "❌ Response shows calculated total with currency",
+        "❌ Response lists contributing receipts (tappable)",
+        "❌ Can ask follow-up questions in same conversation"
+      ],
+      "status": "pending",
+      "completedCriteria": 0,
+      "totalCriteria": 6,
+      "notes": ""
+    },
+    {
+      "id": "US-14",
+      "title": "Attach Items to Chat",
+      "priority": "P1",
+      "persona": "Neriah user",
+      "action": "attach specific items to the chat for contextual questions",
+      "benefit": "I can get AI help with particular tasks or receipts",
+      "acceptanceCriteria": [
+        "❌ \"+\" button in chat input area opens item picker",
+        "❌ Can select one or more items from dashboard",
+        "❌ Selected items appear as cards above chat input",
+        "❌ Can remove attached items before sending",
+        "❌ AI responses are contextual to attached items",
+        "❌ Can attach items from any category (tasks, receipts, meetings)"
+      ],
+      "status": "pending",
+      "completedCriteria": 0,
+      "totalCriteria": 6,
+      "notes": ""
+    },
+    {
+      "id": "US-15",
+      "title": "Draft Responses via Chat",
+      "priority": "P1",
+      "persona": "Neriah user",
+      "action": "ask the chat to help me write email replies",
+      "benefit": "I can respond faster with AI assistance",
+      "acceptanceCriteria": [
+        "❌ Can attach a task item and ask \"Write a reply\"",
+        "❌ AI generates draft based on email context",
+        "❌ Can specify tone or key points (e.g., \"Decline politely\")",
+        "❌ Draft displayed in chat with copy button",
+        "❌ \"Open Gmail\" button to paste and send",
+        "❌ Can ask to regenerate or modify the draft"
+      ],
+      "status": "pending",
+      "completedCriteria": 0,
+      "totalCriteria": 6,
+      "notes": ""
     }
   ]
 }

@@ -729,7 +729,10 @@ export default function Dashboard() {
             <button className="hover:opacity-70 transition-opacity">
               <Image src="/menu.svg" alt="Menu" width={24} height={24} />
             </button>
-            <button className="hover:opacity-70 transition-opacity">
+            <button
+              onClick={() => router.push("/chat")}
+              className="hover:opacity-70 transition-opacity"
+            >
               <Image src="/Chat.svg" alt="Chat" width={24} height={24} />
             </button>
           </div>
