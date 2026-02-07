@@ -78,3 +78,4 @@ supabase-migration-push-subscriptions.sql
 .env.example
 .env.example
 neriah_v2.2_chat.md
+context.md

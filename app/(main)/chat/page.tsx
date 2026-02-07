@@ -1,8 +1,30 @@
 "use client";
 
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+
+type ItemKind = "task" | "receipt" | "meeting";
+
+interface ItemCard {
+  id: string;
+  title: string;
+  subtitle: string;
+  kind: ItemKind;
+}
+
+interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  kind: "text" | "items" | "calc" | "draft";
+  text?: string;
+  items?: ItemCard[];
+  total?: string;
+  currency?: string;
+  receipts?: ItemCard[];
+  draft?: string;
+  gmailUrl?: string;
+}
 
 // ============================================
 // Suggested Prompts Pool
@@ -18,6 +40,39 @@ const PROMPT_SUGGESTIONS = [
   "What are my high priority items?",
   "How much did I spend last month?",
   "What tasks are due this week?",
+];
+
+const MOCK_ITEMS: ItemCard[] = [
+  {
+    id: "task-1",
+    title: "Reply to John about Q4 report",
+    subtitle: "Urgent · From john@company.com",
+    kind: "task",
+  },
+  {
+    id: "receipt-1",
+    title: "Receipt from AWS",
+    subtitle: "$184.29 · Software · Jan 12",
+    kind: "receipt",
+  },
+  {
+    id: "meeting-1",
+    title: "Meeting request: Budget review",
+    subtitle: "2pm–3pm · 2 attendees",
+    kind: "meeting",
+  },
+  {
+    id: "receipt-2",
+    title: "Receipt from Delta",
+    subtitle: "$412.80 · Travel · Jan 18",
+    kind: "receipt",
+  },
+  {
+    id: "task-2",
+    title: "Follow up on contract signature",
+    subtitle: "High · From legal@vendor.com",
+    kind: "task",
+  },
 ];
 
 // ============================================
@@ -65,7 +120,15 @@ const PromptPill = ({ text, onClick }: PromptPillProps) => (
 export default function ChatPage() {
   const router = useRouter();
   const [inputValue, setInputValue] = useState("");
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [pickerTab, setPickerTab] = useState<ItemKind | "all">("all");
+  const [pickerQuery, setPickerQuery] = useState("");
+  const [attachedItems, setAttachedItems] = useState<ItemCard[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const inputContainerRef = useRef<HTMLDivElement>(null);
+  const [inputContainerHeight, setInputContainerHeight] = useState(52);
+  const [textareaHeight, setTextareaHeight] = useState(20);
 
   // Randomly select 3 prompts on mount
   const randomPrompts = useMemo(() => {
@@ -77,12 +140,76 @@ export default function ChatPage() {
     setInputValue(prompt);
   };
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (!inputValue.trim()) return;
-    // TODO: Implement chat API call
-    console.log("Sending:", inputValue);
+    const text = inputValue.trim();
+    const userMessage: ChatMessage = {
+      id: `user-${Date.now()}`,
+      role: "user",
+      kind: "text",
+      text,
+    };
+    setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
+    const target =
+      /write a reply|draft/i.test(text) && attachedItems.length > 0
+        ? "/api/chat/draft"
+        : /how much|total|spend|spent|expenses|expense/i.test(text)
+          ? "/api/chat/calculate"
+          : "/api/chat/query";
+    try {
+      const response = await fetch(target, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text,
+          attachedItemIds: attachedItems.map((item) => item.id),
+        }),
+      });
+      const data = await response.json();
+      const assistantMessage: ChatMessage = {
+        id: `assistant-${Date.now()}`,
+        role: "assistant",
+        kind: data.kind || "text",
+        text: data.message,
+        items: data.items,
+        total: data.total,
+        currency: data.currency,
+        receipts: data.receipts,
+        draft: data.draft,
+        gmailUrl: data.gmailUrl,
+      };
+      setMessages((prev) => [...prev, assistantMessage]);
+      setAttachedItems([]);
+    } catch (error) {
+      const assistantMessage: ChatMessage = {
+        id: `assistant-${Date.now()}`,
+        role: "assistant",
+        kind: "text",
+        text: "Sorry, something went wrong. Please try again.",
+      };
+      setMessages((prev) => [...prev, assistantMessage]);
+    }
   };
+
+  const toggleAttachItem = (item: ItemCard) => {
+    setAttachedItems((prev) => {
+      const exists = prev.some((existing) => existing.id === item.id);
+      if (exists) {
+        return prev.filter((existing) => existing.id !== item.id);
+      }
+      return [...prev, item];
+    });
+  };
+
+  const filteredPickerItems = MOCK_ITEMS.filter((item) => {
+    const matchesTab = pickerTab === "all" || item.kind === pickerTab;
+    const matchesQuery =
+      pickerQuery.trim().length === 0 ||
+      item.title.toLowerCase().includes(pickerQuery.toLowerCase()) ||
+      item.subtitle.toLowerCase().includes(pickerQuery.toLowerCase());
+    return matchesTab && matchesQuery;
+  });
 
   // Auto-resize textarea
   useEffect(() => {
@@ -90,9 +217,23 @@ export default function ChatPage() {
       textareaRef.current.style.height = "auto";
       const scrollHeight = textareaRef.current.scrollHeight;
       const maxHeight = 120; // ~4 lines max
-      textareaRef.current.style.height = `${Math.min(scrollHeight, maxHeight)}px`;
+      const currentHeight = Math.min(scrollHeight, maxHeight);
+      textareaRef.current.style.height = `${currentHeight}px`;
+      setTextareaHeight(currentHeight);
     }
   }, [inputValue]);
+
+  // Measure input container height for prompt positioning
+  useEffect(() => {
+    // Use requestAnimationFrame to ensure measurement happens after DOM updates
+    const measureHeight = () => {
+      if (inputContainerRef.current) {
+        const height = inputContainerRef.current.offsetHeight;
+        setInputContainerHeight(height);
+      }
+    };
+    requestAnimationFrame(measureHeight);
+  }, [inputValue, attachedItems]);
 
   return (
     <div className="relative min-h-screen bg-[#131313] overflow-hidden">
@@ -116,11 +257,116 @@ export default function ChatPage() {
 
         
         {/* Chat Content Area */}
-        <div className="flex-1 flex flex-col items-center justify-center" />
+        <div className="flex-1 flex flex-col gap-4 pt-6">
+          {messages.length > 0 && (
+            <div className="flex flex-col gap-4 pb-[220px]">
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  <div
+                    className={`max-w-[85%] rounded-2xl px-4 py-3 text-xs leading-[1.6] ${
+                      message.role === "user"
+                        ? "bg-[#E8F401] text-[#131313]"
+                        : "bg-[#1F1F1F] text-[#FDFDFDCC]"
+                    }`}
+                  >
+                    {message.text && <p>{message.text}</p>}
+                    {message.kind === "items" && message.items && (
+                      <div className="mt-3 flex flex-col gap-2">
+                        {message.items.map((item) => (
+                          <button
+                            key={item.id}
+                            onClick={() => router.push(`/item/${item.id}`)}
+                            className="w-full text-left rounded-xl border border-[#ffffff1a] bg-[#2A2A2A] px-3 py-2"
+                          >
+                            <p className="text-xs font-semibold text-[#FDFDFD]">
+                              {item.title}
+                            </p>
+                            <p className="text-[11px] text-[#FDFDFD99]">
+                              {item.subtitle}
+                            </p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    {message.kind === "calc" && (
+                      <div className="mt-3 rounded-xl border border-[#ffffff1a] bg-[#2A2A2A] px-3 py-2">
+                        <p className="text-[11px] text-[#FDFDFD99]">
+                          Total spend
+                        </p>
+                        <p className="text-sm font-semibold text-[#FDFDFD]">
+                          {message.total} {message.currency}
+                        </p>
+                        {message.receipts && message.receipts.length > 0 && (
+                          <div className="mt-2 flex flex-col gap-2">
+                            {message.receipts.map((item) => (
+                              <button
+                                key={item.id}
+                                onClick={() => router.push(`/item/${item.id}`)}
+                                className="w-full text-left rounded-xl border border-[#ffffff1a] bg-[#1F1F1F] px-3 py-2"
+                              >
+                                <p className="text-xs font-semibold text-[#FDFDFD]">
+                                  {item.title}
+                                </p>
+                                <p className="text-[11px] text-[#FDFDFD99]">
+                                  {item.subtitle}
+                                </p>
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {message.kind === "draft" && message.draft && (
+                      <div className="mt-3 rounded-xl border border-[#ffffff1a] bg-[#2A2A2A] px-3 py-2">
+                        <p className="text-[11px] uppercase tracking-[0.12em] text-[#FDFDFD66]">
+                          Draft reply
+                        </p>
+                        <p className="mt-2 text-xs text-[#FDFDFDCC]">
+                          {message.draft}
+                        </p>
+                        <div className="mt-3 flex gap-2">
+                          <button
+                            onClick={() => {
+                              if (message.draft) {
+                                navigator.clipboard.writeText(message.draft);
+                              }
+                            }}
+                            className="rounded-full border border-[#ffffff1a] px-3 py-1 text-[11px] text-[#FDFDFDCC]"
+                          >
+                            Copy
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (message.gmailUrl) {
+                                window.open(message.gmailUrl, "_blank");
+                              }
+                            }}
+                            className="rounded-full border border-[#ffffff1a] px-3 py-1 text-[11px] text-[#FDFDFDCC]"
+                          >
+                            Open Gmail
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Suggested Prompts - Fixed above input bar */}
-      <div className="fixed left-0 right-0 bottom-[calc(64px+52px+32px)] z-30">
+      {messages.length === 0 && (
+        <div
+          className="fixed left-0 right-0 z-30"
+          style={{
+            bottom: `${64 + inputContainerHeight + 16}px`,
+          }}
+        >
         <div className="w-full max-w-md lg:max-w-lg xl:max-w-xl mx-auto px-[11px]">
           <div className="flex flex-col items-start gap-[12px] w-full max-w-[366px]">
             {randomPrompts.map((prompt, index) => (
@@ -133,12 +379,115 @@ export default function ChatPage() {
           </div>
         </div>
       </div>
+      )}
+
+      {isPickerOpen && (
+        <div className="fixed inset-0 z-40 flex items-end bg-[#00000080]">
+          <div className="w-full rounded-t-[24px] bg-[#1A1A1A] px-4 pb-6 pt-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-[#FDFDFD]">
+                Attach items
+              </p>
+              <button
+                onClick={() => setIsPickerOpen(false)}
+                className="text-xs text-[#FDFDFD99]"
+              >
+                Close
+              </button>
+            </div>
+            <div className="mt-3 flex gap-2">
+              {["all", "task", "receipt", "meeting"].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setPickerTab(tab as ItemKind | "all")}
+                  className={`rounded-full px-3 py-1 text-[11px] ${
+                    pickerTab === tab
+                      ? "bg-[#E8F401] text-[#131313]"
+                      : "border border-[#ffffff1a] text-[#FDFDFD99]"
+                  }`}
+                >
+                  {tab === "all"
+                    ? "All"
+                    : tab.charAt(0).toUpperCase() + tab.slice(1)}
+                </button>
+              ))}
+            </div>
+            <input
+              value={pickerQuery}
+              onChange={(e) => setPickerQuery(e.target.value)}
+              placeholder="Search items"
+              className="mt-3 w-full rounded-full border border-[#ffffff1a] bg-transparent px-4 py-2 text-xs text-[#FDFDFDCC] outline-none"
+            />
+            <div className="mt-4 flex max-h-[280px] flex-col gap-2 overflow-y-auto">
+              {filteredPickerItems.map((item) => {
+                const isSelected = attachedItems.some(
+                  (selected) => selected.id === item.id,
+                );
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => toggleAttachItem(item)}
+                    className={`flex items-center justify-between rounded-xl border px-3 py-2 text-left ${
+                      isSelected
+                        ? "border-[#E8F401] bg-[#2A2A2A]"
+                        : "border-[#ffffff1a] bg-[#1F1F1F]"
+                    }`}
+                  >
+                    <div>
+                      <p className="text-xs font-semibold text-[#FDFDFD]">
+                        {item.title}
+                      </p>
+                      <p className="text-[11px] text-[#FDFDFD99]">
+                        {item.subtitle}
+                      </p>
+                    </div>
+                    <span
+                      className={`text-[10px] ${
+                        isSelected ? "text-[#E8F401]" : "text-[#FDFDFD66]"
+                      }`}
+                    >
+                      {isSelected ? "Attached" : "Attach"}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              onClick={() => setIsPickerOpen(false)}
+              className="mt-4 w-full rounded-full bg-[#E8F401] py-2 text-xs font-semibold text-[#131313]"
+            >
+              Attach selected
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Sticky Input Bar */}
-      <div className="fixed bottom-[72px] left-0 right-0 z-40">
+      <div
+        ref={inputContainerRef}
+        className="fixed bottom-[64px] left-0 right-0 z-40"
+      >
         <div className="w-full max-w-md lg:max-w-lg xl:max-w-xl mx-auto px-[11px]">
+          {attachedItems.length > 0 && (
+            <div className="mb-3 flex flex-wrap gap-2">
+              {attachedItems.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex items-center gap-2 rounded-full border border-[#ffffff1a] bg-[#1F1F1F] px-3 py-1 text-[11px] text-[#FDFDFDCC]"
+                >
+                  {item.title}
+                  <button
+                    onClick={() => toggleAttachItem(item)}
+                    className="text-[#FDFDFD66]"
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
           <div
-            className="flex items-center gap-3 px-2 py-2 rounded-full"
+            className="flex items-center gap-3 px-2 py-2"
             style={{
               backgroundColor: "rgba(19, 19, 19, 0.2)",
               backdropFilter: "blur(20px)",
@@ -146,10 +495,20 @@ export default function ChatPage() {
               borderTop: "0.4px solid rgba(253, 253, 253, 0.2)",
               borderLeft: "0.4px solid rgba(253, 253, 253, 0.2)",
               borderRight: "0.4px solid rgba(253, 253, 253, 0.2)",
+              borderRadius: (() => {
+                // Dynamic border radius: 24px at min height (20px), 12px at max height (120px)
+                const minHeight = 20;
+                const maxHeight = 120;
+                const maxRadius = 24;
+                const minRadius = 12;
+                const ratio = (textareaHeight - minHeight) / (maxHeight - minHeight);
+                return `${maxRadius - ratio * (maxRadius - minRadius)}px`;
+              })(),
             }}
           >
             {/* Attach Button */}
             <button
+              onClick={() => setIsPickerOpen(true)}
               className="relative flex items-center justify-center w-[32px] h-[32px] rounded-full flex-shrink-0"
               style={{
                 backgroundColor: "rgba(253, 253, 253, 0.04)",
