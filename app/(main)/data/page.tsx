@@ -200,7 +200,7 @@ export default function DataPage() {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 flex flex-col items-center w-full max-w-[402px] mx-auto px-2 lg:px-4 pb-10 pt-[64px]">
+      <div className="relative z-10 flex flex-col items-center w-full max-w-md lg:max-w-lg xl:max-w-xl mx-auto px-2 lg:px-4 pb-10 pt-[64px]">
         {/* Header Row - Back Button + Logo */}
         <div className="w-full flex items-start mb-4">
           {/* Back Button */}

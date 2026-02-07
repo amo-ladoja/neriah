@@ -694,10 +694,21 @@ export default function Dashboard() {
             )}
 
             {!loading && !error && filteredItems.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-[#fdfdfd99] text-sm">
-                  {searchQuery ? "No items match your search" : "No items to display"}
+              <div className="flex flex-col items-center mt-[84px]">
+                <Image src="/Bathtub.svg" alt="" width={32} height={32} className="mb-2" />
+                <h3 style={{ fontSize: 16, fontWeight: 600, color: "rgba(253,253,253,0.8)" }}>
+                  {searchQuery ? "No matches" : "You're free!"}
+                </h3>
+                <p style={{ fontSize: 12, color: "rgba(253,253,253,0.5)", textAlign: "center", marginTop: 8 }}>
+                  {searchQuery
+                    ? "No items match your search"
+                    : "No action items right now."}
                 </p>
+                {!searchQuery && (
+                  <p style={{ fontSize: 12, color: "rgba(253,253,253,0.5)", textAlign: "center" }}>
+                    Enjoy the calm, we&apos;ve got your inbox covered.
+                  </p>
+                )}
               </div>
             )}
 

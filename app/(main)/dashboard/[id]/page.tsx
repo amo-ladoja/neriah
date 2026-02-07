@@ -242,7 +242,7 @@ export default function ItemDetailPage() {
       />
 
       {/* Main Container */}
-      <div className="relative w-full max-w-[402px] mx-auto px-2 lg:px-4">
+      <div className="relative w-full max-w-md lg:max-w-lg xl:max-w-xl mx-auto px-2 lg:px-4">
         {/* Header Row */}
         <div className="flex items-center gap-[12px] pt-[64px]">
           {/* Back Button */}
