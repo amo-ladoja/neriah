@@ -12,7 +12,7 @@
         "✅ Single OAuth flow grants auth + Gmail read access",
         "✅ User sees \"Analyzing your inbox...\" loading state",
         "✅ First tasks appear within 60 seconds",
-        "✅ No additional setup steps required"
+        "✅ No additional setup steps required "
       ],
       "status": "completed",
       "completedCriteria": 5,
