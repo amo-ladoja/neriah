@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback, Suspense } from "react";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useChats } from "@/lib/hooks/useChats";
 import type { Chat, ChatMessageContent } from "@/lib/types/database";
 
@@ -18,14 +18,18 @@ interface ItemCard {
 interface ChatMessage {
   id: string;
   role: "user" | "assistant";
-  kind: "text" | "items" | "calc" | "draft";
+  kind: "text" | "items" | "calc" | "draft" | "insight";
   text?: string;
   items?: ItemCard[];
   total?: string;
   currency?: string;
+  count?: number;
+  breakdown?: Array<{ label: string; amount: number; count: number }>;
   receipts?: ItemCard[];
   draft?: string;
   gmailUrl?: string;
+  insight?: string;
+  insightData?: Array<{ label: string; value: number | string; percentage?: number }>;
 }
 
 // ============================================
@@ -143,11 +147,15 @@ const AssistantMessage = ({ message, onItemClick }: AssistantMessageProps) => (
       {/* Response text */}
       {message.text && (
         <p
-          className="text-xs leading-[1.19]"
-          style={{ color: "rgba(253, 253, 253, 0.8)" }}
-        >
-          {message.text}
-        </p>
+          className="text-xs leading-[1.8]"
+          style={{ color: "#fdfdfd" }}
+          dangerouslySetInnerHTML={{
+            __html: message.text.replace(
+              /\*\*([^*]+)\*\*/g,
+              '<strong class="font-semibold">$1</strong>'
+            ),
+          }}
+        />
       )}
 
       {/* Item cards */}
@@ -255,6 +263,28 @@ const AssistantMessage = ({ message, onItemClick }: AssistantMessageProps) => (
           </div>
         </div>
       )}
+
+      {/* Insight result */}
+      {message.kind === "insight" && message.insightData && (
+        <div className="mt-4">
+          <p className="text-[11px]" style={{ color: "rgba(253, 253, 253, 0.6)" }}>
+            Insights
+          </p>
+          <div className="mt-2 flex flex-col gap-2">
+            {message.insightData.map((item, index) => (
+              <div key={index} className="flex justify-between items-center">
+                <span className="text-xs" style={{ color: "rgba(253, 253, 253, 0.8)" }}>
+                  {item.label}
+                </span>
+                <span className="text-xs font-medium" style={{ color: "rgba(253, 253, 253, 0.8)" }}>
+                  {typeof item.value === "number" ? item.value.toLocaleString() : item.value}
+                  {item.percentage !== undefined && ` (${item.percentage}%)`}
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   </div>
 );
@@ -271,7 +301,7 @@ interface PromptPillProps {
 const PromptPill = ({ text, onClick }: PromptPillProps) => (
   <button
     onClick={onClick}
-    className="relative overflow-hidden flex items-center justify-center px-4 py-3 rounded-[32px] backdrop-blur-[12px] hover:bg-[#fdfdfd08] transition-colors"
+    className="relative overflow-hidden flex items-center justify-center px-3 py-2 rounded-[32px] backdrop-blur-[12px] hover:bg-[#fdfdfd08] transition-colors"
     style={{
       backgroundColor: "rgba(253, 253, 253, 0.04)",
     }}
@@ -309,7 +339,7 @@ interface PreviousChatPillProps {
 const PreviousChatPill = ({ chat, onClick }: PreviousChatPillProps) => (
   <button
     onClick={onClick}
-    className="relative overflow-hidden flex items-center justify-center px-4 py-3 rounded-[32px] backdrop-blur-[12px] hover:bg-[#fdfdfd08] transition-colors"
+    className="relative overflow-hidden flex items-center justify-start px-3 py-2 rounded-[32px] backdrop-blur-[12px] hover:bg-[#fdfdfd08] transition-colors"
     style={{
       backgroundColor: "rgba(253, 253, 253, 0.04)",
     }}
@@ -339,8 +369,10 @@ const PreviousChatPill = ({ chat, onClick }: PreviousChatPillProps) => (
 // Main Chat Component
 // ============================================
 
-export default function ChatPage() {
+function ChatPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlChatId = searchParams.get("chatId");
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatId, setChatId] = useState<string | null>(null);
@@ -398,7 +430,15 @@ export default function ChatPage() {
   const startNewChat = useCallback(() => {
     setChatId(null);
     setMessages([]);
-  }, []);
+    router.replace('/chat');
+  }, [router]);
+
+  // Load chat from URL param (when returning from item detail)
+  useEffect(() => {
+    if (urlChatId && !chatId) {
+      loadChat(urlChatId);
+    }
+  }, [urlChatId, chatId, loadChat]);
 
   const handleSend = async () => {
     if (!inputValue.trim()) return;
@@ -411,14 +451,6 @@ export default function ChatPage() {
     };
     setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
-
-    // Determine API target
-    const target =
-      /write a reply|draft/i.test(text) && attachedItems.length > 0
-        ? "/api/chat/draft"
-        : /how much|how many|total|spend|spent|expenses|expense|count/i.test(text)
-          ? "/api/chat/calculate"
-          : "/api/chat/query";
 
     try {
       // If this is a new chat, create it first
@@ -454,12 +486,13 @@ export default function ChatPage() {
         });
       }
 
-      // Get AI response
-      const response = await fetch(target, {
+      // Get AI response from unified LLM endpoint
+      const response = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          text,
+          message: text,
+          chatId: currentChatId,
           attachedItemIds: attachedItems.map((item) => item.id),
         }),
       });
@@ -469,12 +502,16 @@ export default function ChatPage() {
         role: "assistant",
         kind: data.kind || "text",
         text: data.message,
-        items: data.items,
-        total: data.total,
-        currency: data.currency,
-        receipts: data.receipts,
-        draft: data.draft,
-        gmailUrl: data.gmailUrl,
+        items: data.data?.items,
+        total: data.data?.total,
+        currency: data.data?.currency,
+        count: data.data?.count,
+        breakdown: data.data?.breakdown,
+        receipts: data.data?.receipts,
+        draft: data.data?.draft,
+        gmailUrl: data.data?.gmailUrl,
+        insight: data.data?.insight,
+        insightData: data.data?.insightData,
       };
       setMessages((prev) => [...prev, assistantMessage]);
       setAttachedItems([]);
@@ -489,12 +526,12 @@ export default function ChatPage() {
             kind: data.kind || "text",
             content: {
               text: data.message,
-              items: data.items,
-              total: data.total,
-              currency: data.currency,
-              receipts: data.receipts,
-              draft: data.draft,
-              gmailUrl: data.gmailUrl,
+              items: data.data?.items,
+              total: data.data?.total,
+              currency: data.data?.currency,
+              receipts: data.data?.receipts,
+              draft: data.data?.draft,
+              gmailUrl: data.data?.gmailUrl,
             },
           }),
         });
@@ -564,8 +601,18 @@ export default function ChatPage() {
 
       {/* Main Container - Responsive (matching dashboard) */}
       <div className="relative w-full max-w-md lg:max-w-lg xl:max-w-xl mx-auto px-2 lg:px-4 flex flex-col min-h-screen pb-[180px]">
-        {/* Header with Logo and New Chat button */}
+        {/* Header with Logo and buttons */}
         <div className="relative flex items-center justify-center pt-[71px] pb-[22px]">
+          {/* Back Button - Left */}
+          {(messages.length > 0 || chatId) && (
+            <button
+              onClick={startNewChat}
+              className="absolute left-0 top-[64px] flex items-center justify-center p-[9.984px] rounded-full bg-[#fdfdfd1f] backdrop-blur-[11.375px] border-[1.2px] border-[#fdfdfd33] hover:bg-[#fdfdfd26] transition-all shadow-[0_0_8px_rgba(253,253,253,0.3)]"
+            >
+              <Image src="/CaretLeft.svg" alt="Back" width={18} height={18} />
+            </button>
+          )}
+
           <Image
             src="/neriah-white.svg"
             alt="Neriah"
@@ -573,23 +620,14 @@ export default function ChatPage() {
             height={35}
             className="w-[123px] h-[35px]"
           />
-          {/* New Chat Button - Top Right */}
+
+          {/* New Chat Button - Right */}
           {(messages.length > 0 || chatId) && (
             <button
               onClick={startNewChat}
-              className="absolute right-0 top-[64px] flex items-center justify-center w-10 h-10 rounded-[24px]"
-              style={{
-                backgroundColor: "rgba(253, 253, 253, 0.04)",
-                backdropFilter: "blur(12px)",
-              }}
+              className="absolute right-0 top-[64px] flex items-center justify-center p-[9.984px] rounded-full bg-[#fdfdfd1f] backdrop-blur-[11.375px] border-[1.2px] border-[#fdfdfd33] hover:bg-[#fdfdfd26] transition-all shadow-[0_0_8px_rgba(253,253,253,0.3)]"
             >
-              <Image
-                src="/PencilSimple.svg"
-                alt="New chat"
-                width={24}
-                height={24}
-                className="opacity-60"
-              />
+              <Image src="/PencilSimple.svg" alt="New chat" width={18} height={18} />
             </button>
           )}
         </div>
@@ -606,7 +644,7 @@ export default function ChatPage() {
                   <AssistantMessage
                     key={message.id}
                     message={message}
-                    onItemClick={(id) => router.push(`/dashboard/${id}`)}
+                    onItemClick={(id) => router.push(`/dashboard/${id}?from=chat${chatId ? `&chatId=${chatId}` : ""}`)}
                   />
                 )
               )}
@@ -620,7 +658,7 @@ export default function ChatPage() {
         <div
           className="fixed left-0 right-0 z-30"
           style={{
-            bottom: `${64 + inputContainerHeight + 16}px`,
+            bottom: `${80 + inputContainerHeight + 16}px`,
           }}
         >
           <div className="w-full max-w-md lg:max-w-lg xl:max-w-xl mx-auto px-[18px]">
@@ -743,7 +781,7 @@ export default function ChatPage() {
       {/* Sticky Input Bar */}
       <div
         ref={inputContainerRef}
-        className="fixed bottom-[64px] left-0 right-0 z-40"
+        className="fixed bottom-[80px] left-0 right-0 z-40"
       >
         <div className="w-full max-w-md lg:max-w-lg xl:max-w-xl mx-auto px-[11px]">
           {attachedItems.length > 0 && (
@@ -878,5 +916,13 @@ export default function ChatPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ChatPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#131313]" />}>
+      <ChatPageContent />
+    </Suspense>
   );
 }
