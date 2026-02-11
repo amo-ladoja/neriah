@@ -779,7 +779,7 @@ export default function Dashboard() {
                 className="w-full h-full -rotate-90"
                 viewBox="0 0 32 32"
               >
-                {/* Background circle */}
+                {/* Background circles */}
                 <circle
                   cx="16"
                   cy="16"
