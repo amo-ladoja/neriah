@@ -375,7 +375,7 @@ const TaskCard = ({
 export default function Dashboard() {
   const router = useRouter();
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
-  const { items, loading, error } = useItems(activeFilter);
+  const { items, loading, error, refetch } = useItems(activeFilter);
   const [isSyncing, setIsSyncing] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -405,11 +405,12 @@ export default function Dashboard() {
   const handleSync = async () => {
     setIsSyncing(true);
     try {
-      await fetch("/api/sync", { method: "POST" });
+      await fetch("/api/extract/sync", { method: "POST" });
+      await refetch();
     } catch (error) {
       console.error("Sync failed:", error);
     } finally {
-      setTimeout(() => setIsSyncing(false), 2000);
+      setIsSyncing(false);
     }
   };
 
@@ -740,7 +741,10 @@ export default function Dashboard() {
             <button className="hover:opacity-70 transition-opacity">
               <Image src="/menu.svg" alt="Menu" width={24} height={24} />
             </button>
-            <button className="hover:opacity-70 transition-opacity">
+            <button
+              onClick={() => router.push("/chat")}
+              className="hover:opacity-70 transition-opacity"
+            >
               <Image src="/Chat.svg" alt="Chat" width={24} height={24} />
             </button>
           </div>
@@ -775,7 +779,7 @@ export default function Dashboard() {
                 className="w-full h-full -rotate-90"
                 viewBox="0 0 32 32"
               >
-                {/* Background circle */}
+                {/* Background circles */}
                 <circle
                   cx="16"
                   cy="16"

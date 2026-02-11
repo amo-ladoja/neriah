@@ -133,6 +133,36 @@ export type ReceiptAttachment = {
   created_at: string;
 };
 
+// Chat types
+export type ChatMessageKind = "text" | "items" | "calc" | "draft";
+
+export type ChatMessageContent = {
+  text?: string;
+  items?: Array<{ id: string; title: string; subtitle: string; kind: string }>;
+  total?: string;
+  currency?: string;
+  receipts?: Array<{ id: string; title: string; subtitle: string; kind: string }>;
+  draft?: string;
+  gmailUrl?: string;
+};
+
+export type Chat = {
+  id: string;
+  user_id: string;
+  title: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type ChatMessage = {
+  id: string;
+  chat_id: string;
+  role: "user" | "assistant";
+  kind: ChatMessageKind;
+  content: ChatMessageContent;
+  created_at: string;
+};
+
 // Helper type for database operations
 export type Database = {
   public: {
@@ -156,6 +186,16 @@ export type Database = {
         Row: ReceiptAttachment;
         Insert: Omit<ReceiptAttachment, "id" | "created_at">;
         Update: Partial<Omit<ReceiptAttachment, "id" | "created_at">>;
+      };
+      chats: {
+        Row: Chat;
+        Insert: Omit<Chat, "id" | "created_at" | "updated_at">;
+        Update: Partial<Omit<Chat, "id" | "created_at" | "updated_at">>;
+      };
+      chat_messages: {
+        Row: ChatMessage;
+        Insert: Omit<ChatMessage, "id" | "created_at">;
+        Update: Partial<Omit<ChatMessage, "id" | "created_at">>;
       };
     };
   };
