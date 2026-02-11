@@ -36,7 +36,7 @@
       "status": "completed",
       "completedCriteria": 5,
       "totalCriteria": 5,
-      "notes": "Dashboard fully functional with real data, real-time subscriptions, filtering, sorting, and empty state message"
+      "notes": "Dashboard fully implemented with real data, real-time subscriptions, category filters, sorting, search, and empty state message."
     },
     {
       "id": "US-3",
@@ -85,13 +85,13 @@
       "acceptanceCriteria": [
         "✅ \"Done\" / checkmark button on each item",
         "✅ Completed items move to \"Completed\" section (or hide)",
-        "❌ Can undo completion within 5 seconds",
+        "✅ Can undo completion within 5 seconds",
         "✅ Completion syncs to database immediately"
       ],
-      "status": "in_progress",
-      "completedCriteria": 3,
+      "status": "completed",
+      "completedCriteria": 4,
       "totalCriteria": 4,
-      "notes": "Done button, API endpoint, database sync, and filtering all working. Completed items are hidden from main list. Need: Undo functionality"
+      "notes": "Fully implemented: Done button, API endpoint, database sync, filtering, and undo functionality with 5-second countdown toast"
     },
     {
       "id": "US-6",
