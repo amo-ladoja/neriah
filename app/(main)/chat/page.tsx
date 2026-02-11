@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useChats } from "@/lib/hooks/useChats";
+import type { Chat, ChatMessageContent } from "@/lib/types/database";
 
 type ItemKind = "task" | "receipt" | "meeting";
 
@@ -76,6 +78,188 @@ const MOCK_ITEMS: ItemCard[] = [
 ];
 
 // ============================================
+// Gradient Border Style (reusable)
+// ============================================
+
+const gradientBorderStyle = {
+  background:
+    "linear-gradient(119deg, rgba(253,253,253,0.6), rgba(202,202,202,0.6) 57%, rgba(151,151,151,0.6))",
+  WebkitMask:
+    "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+  WebkitMaskComposite: "xor" as const,
+  maskComposite: "exclude" as const,
+};
+
+// ============================================
+// User Message Component
+// ============================================
+
+interface UserMessageProps {
+  text: string;
+}
+
+const UserMessage = ({ text }: UserMessageProps) => (
+  <div className="flex justify-end">
+    <div
+      className="relative max-w-[85%] rounded-[24px] p-3 backdrop-blur-[12px]"
+      style={{ backgroundColor: "rgba(253, 253, 253, 0.00)" }}
+    >
+      {/* Gradient border */}
+      <div
+        className="absolute inset-0 rounded-[24px] p-[0.4px] pointer-events-none"
+        style={gradientBorderStyle}
+      />
+      <p
+        className="text-xs text-right"
+        style={{ color: "rgba(253, 253, 253, 0.8)" }}
+      >
+        {text}
+      </p>
+    </div>
+  </div>
+);
+
+// ============================================
+// Assistant Message Component
+// ============================================
+
+interface AssistantMessageProps {
+  message: ChatMessage;
+  onItemClick: (itemId: string) => void;
+}
+
+const AssistantMessage = ({ message, onItemClick }: AssistantMessageProps) => (
+  <div className="flex justify-start">
+    <div
+      className="relative max-w-[85%] rounded-[24px] p-3 backdrop-blur-[12px]"
+      style={{ backgroundColor: "rgba(253, 253, 253, 0.04)" }}
+    >
+      {/* Gradient border */}
+      <div
+        className="absolute inset-0 rounded-[24px] p-[0.4px] pointer-events-none"
+        style={gradientBorderStyle}
+      />
+
+      {/* Response text */}
+      {message.text && (
+        <p
+          className="text-xs leading-[1.19]"
+          style={{ color: "rgba(253, 253, 253, 0.8)" }}
+        >
+          {message.text}
+        </p>
+      )}
+
+      {/* Item cards */}
+      {message.kind === "items" && message.items && (
+        <div className="mt-4 flex flex-col gap-3">
+          {message.items.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => onItemClick(item.id)}
+              className="flex items-center justify-between gap-2 text-left"
+            >
+              <span
+                className="text-xs font-medium"
+                style={{ color: "rgba(253, 253, 253, 0.8)" }}
+              >
+                {item.title}
+              </span>
+              <Image
+                src="/ArrowSquareOut.svg"
+                alt=""
+                width={14}
+                height={14}
+                className="flex-shrink-0 opacity-80"
+              />
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Calc result */}
+      {message.kind === "calc" && (
+        <div className="mt-4">
+          <p className="text-[11px]" style={{ color: "rgba(253, 253, 253, 0.6)" }}>
+            Total spend
+          </p>
+          <p className="text-sm font-semibold" style={{ color: "rgba(253, 253, 253, 0.8)" }}>
+            {message.total} {message.currency}
+          </p>
+          {message.receipts && message.receipts.length > 0 && (
+            <div className="mt-3 flex flex-col gap-3">
+              {message.receipts.map((item) => (
+                <button
+                  key={item.id}
+                  onClick={() => onItemClick(item.id)}
+                  className="flex items-center justify-between gap-2 text-left"
+                >
+                  <span
+                    className="text-xs font-medium"
+                    style={{ color: "rgba(253, 253, 253, 0.8)" }}
+                  >
+                    {item.title}
+                  </span>
+                  <Image
+                    src="/ArrowSquareOut.svg"
+                    alt=""
+                    width={14}
+                    height={14}
+                    className="flex-shrink-0 opacity-80"
+                  />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Draft reply */}
+      {message.kind === "draft" && message.draft && (
+        <div className="mt-4">
+          <p
+            className="text-[11px] uppercase tracking-[0.12em]"
+            style={{ color: "rgba(253, 253, 253, 0.4)" }}
+          >
+            Draft reply
+          </p>
+          <p
+            className="mt-2 text-xs"
+            style={{ color: "rgba(253, 253, 253, 0.8)" }}
+          >
+            {message.draft}
+          </p>
+          <div className="mt-3 flex gap-2">
+            <button
+              onClick={() => {
+                if (message.draft) {
+                  navigator.clipboard.writeText(message.draft);
+                }
+              }}
+              className="rounded-full border border-[#ffffff1a] px-3 py-1 text-[11px]"
+              style={{ color: "rgba(253, 253, 253, 0.8)" }}
+            >
+              Copy
+            </button>
+            <button
+              onClick={() => {
+                if (message.gmailUrl) {
+                  window.open(message.gmailUrl, "_blank");
+                }
+              }}
+              className="rounded-full border border-[#ffffff1a] px-3 py-1 text-[11px]"
+              style={{ color: "rgba(253, 253, 253, 0.8)" }}
+            >
+              Open Gmail
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+// ============================================
 // Prompt Pill Component
 // ============================================
 
@@ -87,7 +271,7 @@ interface PromptPillProps {
 const PromptPill = ({ text, onClick }: PromptPillProps) => (
   <button
     onClick={onClick}
-    className="relative overflow-hidden flex items-center justify-center px-3 py-2 rounded-[32px] backdrop-blur-[12px] hover:bg-[#fdfdfd08] transition-colors"
+    className="relative overflow-hidden flex items-center justify-center px-4 py-3 rounded-[32px] backdrop-blur-[12px] hover:bg-[#fdfdfd08] transition-colors"
     style={{
       backgroundColor: "rgba(253, 253, 253, 0.04)",
     }}
@@ -114,6 +298,44 @@ const PromptPill = ({ text, onClick }: PromptPillProps) => (
 );
 
 // ============================================
+// Previous Chat Pill Component
+// ============================================
+
+interface PreviousChatPillProps {
+  chat: Chat;
+  onClick: () => void;
+}
+
+const PreviousChatPill = ({ chat, onClick }: PreviousChatPillProps) => (
+  <button
+    onClick={onClick}
+    className="relative overflow-hidden flex items-center justify-center px-4 py-3 rounded-[32px] backdrop-blur-[12px] hover:bg-[#fdfdfd08] transition-colors"
+    style={{
+      backgroundColor: "rgba(253, 253, 253, 0.04)",
+    }}
+  >
+    {/* Gradient border */}
+    <div
+      className="absolute inset-0 rounded-[32px] p-[0.4px] pointer-events-none"
+      style={{
+        background:
+          "linear-gradient(119deg, rgba(253,253,253,0.6), rgba(202,202,202,0.6) 57%, rgba(151,151,151,0.6))",
+        WebkitMask:
+          "linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)",
+        WebkitMaskComposite: "xor",
+        maskComposite: "exclude",
+      }}
+    />
+    <span
+      className="text-xs tracking-[1.67%] leading-[1.67]"
+      style={{ color: "rgba(253, 253, 253, 0.6)" }}
+    >
+      {chat.title}
+    </span>
+  </button>
+);
+
+// ============================================
 // Main Chat Component
 // ============================================
 
@@ -121,6 +343,7 @@ export default function ChatPage() {
   const router = useRouter();
   const [inputValue, setInputValue] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [chatId, setChatId] = useState<string | null>(null);
   const [isPickerOpen, setIsPickerOpen] = useState(false);
   const [pickerTab, setPickerTab] = useState<ItemKind | "all">("all");
   const [pickerQuery, setPickerQuery] = useState("");
@@ -129,6 +352,9 @@ export default function ChatPage() {
   const inputContainerRef = useRef<HTMLDivElement>(null);
   const [inputContainerHeight, setInputContainerHeight] = useState(52);
   const [textareaHeight, setTextareaHeight] = useState(20);
+
+  // Fetch previous chats
+  const { chats: previousChats, refetch: refetchChats } = useChats();
 
   // Randomly select 3 prompts on mount
   const randomPrompts = useMemo(() => {
@@ -139,6 +365,40 @@ export default function ChatPage() {
   const handlePromptClick = (prompt: string) => {
     setInputValue(prompt);
   };
+
+  // Load a previous chat
+  const loadChat = useCallback(async (selectedChatId: string) => {
+    try {
+      const response = await fetch(`/api/chats/${selectedChatId}`);
+      if (!response.ok) throw new Error("Failed to load chat");
+      const data = await response.json();
+
+      // Convert DB messages to ChatMessage format
+      const loadedMessages: ChatMessage[] = data.messages.map((msg: { id: string; role: "user" | "assistant"; kind: string; content: ChatMessageContent }) => ({
+        id: msg.id,
+        role: msg.role,
+        kind: msg.kind as ChatMessage["kind"],
+        text: msg.content.text,
+        items: msg.content.items,
+        total: msg.content.total,
+        currency: msg.content.currency,
+        receipts: msg.content.receipts,
+        draft: msg.content.draft,
+        gmailUrl: msg.content.gmailUrl,
+      }));
+
+      setChatId(selectedChatId);
+      setMessages(loadedMessages);
+    } catch (error) {
+      console.error("Failed to load chat:", error);
+    }
+  }, []);
+
+  // Start a new chat
+  const startNewChat = useCallback(() => {
+    setChatId(null);
+    setMessages([]);
+  }, []);
 
   const handleSend = async () => {
     if (!inputValue.trim()) return;
@@ -151,13 +411,50 @@ export default function ChatPage() {
     };
     setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
+
+    // Determine API target
     const target =
       /write a reply|draft/i.test(text) && attachedItems.length > 0
         ? "/api/chat/draft"
-        : /how much|total|spend|spent|expenses|expense/i.test(text)
+        : /how much|how many|total|spend|spent|expenses|expense|count/i.test(text)
           ? "/api/chat/calculate"
           : "/api/chat/query";
+
     try {
+      // If this is a new chat, create it first
+      let currentChatId = chatId;
+      if (!currentChatId) {
+        const createResponse = await fetch("/api/chats", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: text,
+            message: {
+              role: "user",
+              kind: "text",
+              content: { text },
+            },
+          }),
+        });
+        if (createResponse.ok) {
+          const createData = await createResponse.json();
+          currentChatId = createData.chat.id;
+          setChatId(currentChatId);
+        }
+      } else {
+        // Add user message to existing chat
+        await fetch(`/api/chats/${currentChatId}/messages`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            role: "user",
+            kind: "text",
+            content: { text },
+          }),
+        });
+      }
+
+      // Get AI response
       const response = await fetch(target, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -181,6 +478,29 @@ export default function ChatPage() {
       };
       setMessages((prev) => [...prev, assistantMessage]);
       setAttachedItems([]);
+
+      // Save assistant message to chat
+      if (currentChatId) {
+        await fetch(`/api/chats/${currentChatId}/messages`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            role: "assistant",
+            kind: data.kind || "text",
+            content: {
+              text: data.message,
+              items: data.items,
+              total: data.total,
+              currency: data.currency,
+              receipts: data.receipts,
+              draft: data.draft,
+              gmailUrl: data.gmailUrl,
+            },
+          }),
+        });
+        // Refetch chats to update the list
+        refetchChats();
+      }
     } catch (error) {
       const assistantMessage: ChatMessage = {
         id: `assistant-${Date.now()}`,
@@ -244,8 +564,8 @@ export default function ChatPage() {
 
       {/* Main Container - Responsive (matching dashboard) */}
       <div className="relative w-full max-w-md lg:max-w-lg xl:max-w-xl mx-auto px-2 lg:px-4 flex flex-col min-h-screen pb-[180px]">
-        {/* Logo - Same position as dashboard */}
-        <div className="flex items-center justify-center pt-[71px] pb-[22px]">
+        {/* Header with Logo and New Chat button */}
+        <div className="relative flex items-center justify-center pt-[71px] pb-[22px]">
           <Image
             src="/neriah-white.svg"
             alt="Neriah"
@@ -253,113 +573,49 @@ export default function ChatPage() {
             height={35}
             className="w-[123px] h-[35px]"
           />
+          {/* New Chat Button - Top Right */}
+          {(messages.length > 0 || chatId) && (
+            <button
+              onClick={startNewChat}
+              className="absolute right-0 top-[64px] flex items-center justify-center w-10 h-10 rounded-[24px]"
+              style={{
+                backgroundColor: "rgba(253, 253, 253, 0.04)",
+                backdropFilter: "blur(12px)",
+              }}
+            >
+              <Image
+                src="/PencilSimple.svg"
+                alt="New chat"
+                width={24}
+                height={24}
+                className="opacity-60"
+              />
+            </button>
+          )}
         </div>
 
         
         {/* Chat Content Area */}
         <div className="flex-1 flex flex-col gap-4 pt-6">
           {messages.length > 0 && (
-            <div className="flex flex-col gap-4 pb-[220px]">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-                >
-                  <div
-                    className={`max-w-[85%] rounded-2xl px-4 py-3 text-xs leading-[1.6] ${
-                      message.role === "user"
-                        ? "bg-[#E8F401] text-[#131313]"
-                        : "bg-[#1F1F1F] text-[#FDFDFDCC]"
-                    }`}
-                  >
-                    {message.text && <p>{message.text}</p>}
-                    {message.kind === "items" && message.items && (
-                      <div className="mt-3 flex flex-col gap-2">
-                        {message.items.map((item) => (
-                          <button
-                            key={item.id}
-                            onClick={() => router.push(`/item/${item.id}`)}
-                            className="w-full text-left rounded-xl border border-[#ffffff1a] bg-[#2A2A2A] px-3 py-2"
-                          >
-                            <p className="text-xs font-semibold text-[#FDFDFD]">
-                              {item.title}
-                            </p>
-                            <p className="text-[11px] text-[#FDFDFD99]">
-                              {item.subtitle}
-                            </p>
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    {message.kind === "calc" && (
-                      <div className="mt-3 rounded-xl border border-[#ffffff1a] bg-[#2A2A2A] px-3 py-2">
-                        <p className="text-[11px] text-[#FDFDFD99]">
-                          Total spend
-                        </p>
-                        <p className="text-sm font-semibold text-[#FDFDFD]">
-                          {message.total} {message.currency}
-                        </p>
-                        {message.receipts && message.receipts.length > 0 && (
-                          <div className="mt-2 flex flex-col gap-2">
-                            {message.receipts.map((item) => (
-                              <button
-                                key={item.id}
-                                onClick={() => router.push(`/item/${item.id}`)}
-                                className="w-full text-left rounded-xl border border-[#ffffff1a] bg-[#1F1F1F] px-3 py-2"
-                              >
-                                <p className="text-xs font-semibold text-[#FDFDFD]">
-                                  {item.title}
-                                </p>
-                                <p className="text-[11px] text-[#FDFDFD99]">
-                                  {item.subtitle}
-                                </p>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    {message.kind === "draft" && message.draft && (
-                      <div className="mt-3 rounded-xl border border-[#ffffff1a] bg-[#2A2A2A] px-3 py-2">
-                        <p className="text-[11px] uppercase tracking-[0.12em] text-[#FDFDFD66]">
-                          Draft reply
-                        </p>
-                        <p className="mt-2 text-xs text-[#FDFDFDCC]">
-                          {message.draft}
-                        </p>
-                        <div className="mt-3 flex gap-2">
-                          <button
-                            onClick={() => {
-                              if (message.draft) {
-                                navigator.clipboard.writeText(message.draft);
-                              }
-                            }}
-                            className="rounded-full border border-[#ffffff1a] px-3 py-1 text-[11px] text-[#FDFDFDCC]"
-                          >
-                            Copy
-                          </button>
-                          <button
-                            onClick={() => {
-                              if (message.gmailUrl) {
-                                window.open(message.gmailUrl, "_blank");
-                              }
-                            }}
-                            className="rounded-full border border-[#ffffff1a] px-3 py-1 text-[11px] text-[#FDFDFDCC]"
-                          >
-                            Open Gmail
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
+            <div className="flex flex-col gap-2 pb-[220px]">
+              {messages.map((message) =>
+                message.role === "user" ? (
+                  <UserMessage key={message.id} text={message.text || ""} />
+                ) : (
+                  <AssistantMessage
+                    key={message.id}
+                    message={message}
+                    onItemClick={(id) => router.push(`/dashboard/${id}`)}
+                  />
+                )
+              )}
             </div>
           )}
         </div>
       </div>
 
-      {/* Suggested Prompts - Fixed above input bar */}
+      {/* Previous Chats or Suggested Prompts - Fixed above input bar */}
       {messages.length === 0 && (
         <div
           className="fixed left-0 right-0 z-30"
@@ -367,18 +623,40 @@ export default function ChatPage() {
             bottom: `${64 + inputContainerHeight + 16}px`,
           }}
         >
-        <div className="w-full max-w-md lg:max-w-lg xl:max-w-xl mx-auto px-[11px]">
-          <div className="flex flex-col items-start gap-[12px] w-full max-w-[366px]">
-            {randomPrompts.map((prompt, index) => (
-              <PromptPill
-                key={index}
-                text={prompt}
-                onClick={() => handlePromptClick(prompt)}
-              />
-            ))}
+          <div className="w-full max-w-md lg:max-w-lg xl:max-w-xl mx-auto px-[18px]">
+            {previousChats.length > 0 ? (
+              // Show Previous Chats
+              <div className="flex flex-col gap-[23px] w-full max-w-[366px]">
+                <p
+                  className="text-xs font-medium tracking-[3.33%] leading-[1.67]"
+                  style={{ color: "rgba(253, 253, 253, 0.6)" }}
+                >
+                  Previous Chats
+                </p>
+                <div className="flex flex-col items-start gap-[12px]">
+                  {previousChats.map((chat) => (
+                    <PreviousChatPill
+                      key={chat.id}
+                      chat={chat}
+                      onClick={() => loadChat(chat.id)}
+                    />
+                  ))}
+                </div>
+              </div>
+            ) : (
+              // Show Suggested Prompts
+              <div className="flex flex-col items-start gap-[12px] w-full max-w-[366px]">
+                {randomPrompts.map((prompt, index) => (
+                  <PromptPill
+                    key={index}
+                    text={prompt}
+                    onClick={() => handlePromptClick(prompt)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         </div>
-      </div>
       )}
 
       {isPickerOpen && (

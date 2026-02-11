@@ -31,12 +31,12 @@
         "✅ Each item shows: title, sender, category, time received",
         "✅ Items sorted by priority/recency",
         "✅ Can filter by category (All, Tasks, Receipts, Meetings, Snoozed)",
-        "❌ Empty state if no items (with encouraging message)"
+        "✅ Empty state if no items (with encouraging message)"
       ],
-      "status": "in_progress",
-      "completedCriteria": 4,
+      "status": "completed",
+      "completedCriteria": 5,
       "totalCriteria": 5,
-      "notes": "Dashboard fully functional with real data, real-time subscriptions, filtering, and sorting. Need: Encouraging empty state message"
+      "notes": "Dashboard fully functional with real data, real-time subscriptions, filtering, sorting, and empty state message"
     },
     {
       "id": "US-3",
@@ -214,17 +214,17 @@
       "action": "ask questions about my items in natural language",
       "benefit": "I can quickly find specific information without manual filtering",
       "acceptanceCriteria": [
-        "❌ Chat icon accessible in bottom navigation",
-        "❌ Can type natural language queries (e.g., \"What are my urgent tasks?\")",
-        "❌ AI returns relevant items from dashboard data",
-        "❌ Results display as tappable item cards in chat",
-        "❌ Can tap items to open full detail view",
-        "❌ Conversation history maintained within session"
+        "✅ Chat icon accessible in bottom navigation",
+        "✅ Can type natural language queries (e.g., \"What are my urgent tasks?\")",
+        "✅ AI returns relevant items from dashboard data",
+        "✅ Results display as tappable item cards in chat",
+        "✅ Can tap items to open full detail view",
+        "✅ Conversation history maintained within session"
       ],
-      "status": "pending",
-      "completedCriteria": 0,
+      "status": "completed",
+      "completedCriteria": 6,
       "totalCriteria": 6,
-      "notes": ""
+      "notes": "Fully implemented: Chat page at /chat, bottom nav icon, /api/chat/query endpoint, item cards in response, navigation to detail, chat history with Supabase persistence"
     },
     {
       "id": "US-13",
@@ -234,17 +234,17 @@
       "action": "ask about my spending and receipt totals",
       "benefit": "I can understand my expenses without manual calculation",
       "acceptanceCriteria": [
-        "❌ Can ask \"How much did I spend last month?\"",
-        "❌ Can filter by category (e.g., \"Total software expenses?\")",
-        "❌ Can filter by vendor (e.g., \"How much have I paid AWS?\")",
-        "❌ Response shows calculated total with currency",
-        "❌ Response lists contributing receipts (tappable)",
-        "❌ Can ask follow-up questions in same conversation"
+        "✅ Can ask \"How much did I spend last month?\"",
+        "✅ Can filter by category (e.g., \"Total software expenses?\")",
+        "✅ Can filter by vendor (e.g., \"How much have I paid AWS?\")",
+        "✅ Response shows calculated total with currency",
+        "✅ Response lists contributing receipts (tappable)",
+        "✅ Can ask follow-up questions in same conversation"
       ],
-      "status": "pending",
-      "completedCriteria": 0,
+      "status": "completed",
+      "completedCriteria": 6,
       "totalCriteria": 6,
-      "notes": ""
+      "notes": "Fully implemented: /api/chat/calculate endpoint with date range, category, and vendor filtering. Shows total with currency and receipt list. Chat history enables follow-ups."
     },
     {
       "id": "US-14",
@@ -254,17 +254,17 @@
       "action": "attach specific items to the chat for contextual questions",
       "benefit": "I can get AI help with particular tasks or receipts",
       "acceptanceCriteria": [
-        "❌ \"+\" button in chat input area opens item picker",
-        "❌ Can select one or more items from dashboard",
-        "❌ Selected items appear as cards above chat input",
-        "❌ Can remove attached items before sending",
-        "❌ AI responses are contextual to attached items",
-        "❌ Can attach items from any category (tasks, receipts, meetings)"
+        "✅ \"+\" button in chat input area opens item picker",
+        "✅ Can select one or more items from dashboard",
+        "✅ Selected items appear as cards above chat input",
+        "✅ Can remove attached items before sending",
+        "✅ AI responses are contextual to attached items",
+        "✅ Can attach items from any category (tasks, receipts, meetings)"
       ],
-      "status": "pending",
-      "completedCriteria": 0,
+      "status": "completed",
+      "completedCriteria": 6,
       "totalCriteria": 6,
-      "notes": ""
+      "notes": "Fully implemented: + button opens item picker modal with tabs (all/task/receipt/meeting), multi-select, attached items shown above input with remove button, attachedItemIds sent to API"
     },
     {
       "id": "US-15",
@@ -274,17 +274,17 @@
       "action": "ask the chat to help me write email replies",
       "benefit": "I can respond faster with AI assistance",
       "acceptanceCriteria": [
-        "❌ Can attach a task item and ask \"Write a reply\"",
-        "❌ AI generates draft based on email context",
-        "❌ Can specify tone or key points (e.g., \"Decline politely\")",
-        "❌ Draft displayed in chat with copy button",
-        "❌ \"Open Gmail\" button to paste and send",
-        "❌ Can ask to regenerate or modify the draft"
+        "✅ Can attach a task item and ask \"Write a reply\"",
+        "✅ AI generates draft based on email context",
+        "✅ Can specify tone or key points (e.g., \"Decline politely\")",
+        "✅ Draft displayed in chat with copy button",
+        "✅ \"Open Gmail\" button to paste and send",
+        "✅ Can ask to regenerate or modify the draft"
       ],
-      "status": "pending",
-      "completedCriteria": 0,
+      "status": "completed",
+      "completedCriteria": 6,
       "totalCriteria": 6,
-      "notes": ""
+      "notes": "Fully implemented: /api/chat/draft endpoint, draft detection routing, AssistantMessage renders draft with Copy and Open Gmail buttons, regeneration possible via new message"
     }
   ]
 }

@@ -86,11 +86,19 @@ export async function POST(request: Request) {
   const currencies = new Set(receipts.map((receipt) => receipt.currency || "USD"));
   const currency = currencies.size === 1 ? receipts[0]?.currency || "USD" : "USD";
 
+  const isCountQuery = /how many/i.test(queryText);
+  let message: string;
+  if (receipts.length) {
+    message = isCountQuery
+      ? `You have ${receipts.length} receipt(s) in that period totaling ${total.toFixed(2)} ${currency}.`
+      : "Here is the total spend for the selected period.";
+  } else {
+    message = "No receipts matched that query in the last 30 days.";
+  }
+
   return NextResponse.json({
     kind: "calc",
-    message: receipts.length
-      ? "Here is the total spend for the selected period."
-      : "No receipts matched that query in the last 30 days.",
+    message,
     total: total.toFixed(2),
     currency,
     receipts: receipts.map(({ amount, currency: _currency, ...rest }) => rest),

@@ -22,6 +22,26 @@ const STOPWORDS = new Set([
   "please",
   "recent",
   "latest",
+  // Category-related words (prevent polluting keyword search)
+  "receipts",
+  "receipt",
+  "invoices",
+  "invoice",
+  "tasks",
+  "task",
+  "meetings",
+  "meeting",
+  "items",
+  "item",
+  // Query words
+  "many",
+  "much",
+  "how",
+  "have",
+  "received",
+  "days",
+  "past",
+  "last",
 ]);
 
 const DATE_KEYWORDS: Record<string, () => { start: Date; end: Date }> = {
