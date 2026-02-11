@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import { markItemComplete, deleteItem, submitFeedback, snoozeItem } from "@/lib/actions/items";
@@ -18,7 +18,10 @@ type Item = Database["public"]["Tables"]["items"]["Row"];
 export default function ItemDetailPage() {
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const itemId = params.id as string;
+  const from = searchParams.get("from");
+  const returnChatId = searchParams.get("chatId");
 
   const [item, setItem] = useState<Item | null>(null);
   const [loading, setLoading] = useState(true);
@@ -189,8 +192,8 @@ export default function ItemDetailPage() {
     return (
       <div className="min-h-screen bg-[#131313] flex flex-col items-center justify-center gap-4">
         <p className="text-[rgba(253,253,253,0.6)] text-[12px]">{error || "Item not found"}</p>
-        <button onClick={() => router.push("/dashboard")} className="text-[#E8F401] text-[12px] no-underline">
-          Back to dashboard
+        <button onClick={() => router.push(from === "chat" ? `/chat${returnChatId ? `?chatId=${returnChatId}` : ""}` : "/dashboard")} className="text-[#E8F401] text-[12px] no-underline">
+          Go back
         </button>
       </div>
     );
@@ -247,7 +250,7 @@ export default function ItemDetailPage() {
         <div className="flex items-center gap-[12px] pt-[64px]">
           {/* Back Button */}
           <button
-            onClick={() => router.push("/dashboard")}
+            onClick={() => router.push(from === "chat" ? `/chat${returnChatId ? `?chatId=${returnChatId}` : ""}` : "/dashboard")}
             className="flex items-center justify-center p-[9.984px] rounded-full bg-[#fdfdfd1f] backdrop-blur-[11.375px] border-[1.2px] border-[#fdfdfd33] hover:bg-[#fdfdfd26] transition-all shadow-[0_0_8px_rgba(253,253,253,0.3)]"
           >
             <Image src="/CaretLeft.svg" alt="Back" width={18} height={18} />
@@ -261,7 +264,7 @@ export default function ItemDetailPage() {
               color: "rgba(253, 253, 253, 0.6)",
             }}
           >
-            Back to dashboard
+            {from === "chat" ? "Back to chat" : "Back to dashboard"}
           </span>
         </div>
 
