@@ -113,141 +113,156 @@ export async function POST(request: NextRequest) {
         existingItems?.map((item) => item.email_id) || []
       );
 
-      // Step 3: Extract actionable items using Claude (with rate limiting)
-      console.log("[Extract Initial] Extracting items with Claude AI...");
-      let totalItemsCreated = 0;
+      // Step 3: Filter out already-processed emails BEFORE LLM calls
+      const emailsToProcess = parsedEmails.filter(
+        (email) => !existingEmailIds.has(email.messageId)
+      );
 
-      for (let i = 0; i < parsedEmails.length; i++) {
-        const email = parsedEmails[i];
+      console.log(
+        `[Extract Initial] Processing ${emailsToProcess.length} new emails (${parsedEmails.length - emailsToProcess.length} already processed)`
+      );
 
-        // Skip emails already processed
-        if (existingEmailIds.has(email.messageId)) {
-          console.log(`[Extract Initial] Skipping already-processed email: ${email.subject}`);
-          continue;
-        }
-        try {
-          console.log(`[Extract Initial] Processing email ${i + 1}/${parsedEmails.length}: "${email.subject}"`);
+      if (emailsToProcess.length === 0) {
+        console.log("[Extract Initial] No new emails to process");
+        await supabase
+          .from("sync_logs")
+          .update({
+            status: "completed",
+            completed_at: new Date().toISOString(),
+            items_created: 0,
+          })
+          .eq("id", syncLog.id);
 
-          // Extract from email
-          const extraction = await extractFromEmail({
+        await supabase
+          .from("profiles")
+          .update({
+            initial_extraction_completed: true,
+            last_sync_at: new Date().toISOString(),
+          })
+          .eq("id", user.id);
+
+        return NextResponse.json({
+          success: true,
+          emailsFetched: gmailMessages.length,
+          itemsCreated: 0,
+        });
+      }
+
+      // Step 4: Extract items in PARALLEL using Claude AI
+      console.log("[Extract Initial] Extracting items with Claude AI (parallel)...");
+      const extractions = await Promise.all(
+        emailsToProcess.map((email) =>
+          extractFromEmail({
             from: email.from,
             subject: email.subject,
             body: email.body,
             date: email.date,
             hasAttachments: email.hasAttachments,
             attachments: email.attachments,
-          });
+          }).catch((err) => {
+            console.error(`[Extract Initial] Error extracting "${email.subject}":`, err);
+            return null;
+          })
+        )
+      );
 
-          // Filter by confidence (lowered to 0.5 for testing)
-          const highConfidenceItems = filterByConfidence(
-            extraction.items,
-            0.5
-          );
+      // Step 5: Prepare all items for batch insert
+      const itemsToInsert: any[] = [];
 
-          // Deduplicate items from same email by type+title
-          const seenKeys = new Set<string>();
-          const uniqueItems = highConfidenceItems.filter((item: any) => {
-            const key = `${item.type}:${item.title || item.vendor || ""}`;
-            if (seenKeys.has(key)) return false;
-            seenKeys.add(key);
-            return true;
-          });
+      extractions.forEach((extraction, index) => {
+        if (!extraction) return;
 
-          console.log(
-            `[Extract Initial] Email "${email.subject}": ${uniqueItems.length} items extracted (${highConfidenceItems.length - uniqueItems.length} duplicates removed)`
-          );
+        const email = emailsToProcess[index];
 
-          // Step 4: Store items in database
-          for (const item of uniqueItems) {
-            try {
-              // Parse sender email
-              const senderMatch = email.from.match(/<(.+?)>/);
-              const senderEmail = senderMatch ? senderMatch[1] : email.from;
-              const senderName = email.from
-                .replace(/<.+?>/, "")
-                .trim()
-                .replace(/"/g, "");
+        // Filter by confidence (lowered to 0.5 for testing)
+        const highConfidenceItems = filterByConfidence(extraction.items, 0.5);
 
-              // Base item data
-              const itemData: any = {
-                user_id: user.id,
-                email_id: email.messageId,
-                sender_email: senderEmail,
-                sender_name: senderName || senderEmail,
-                email_date: email.internalDate.toISOString(),
-                status: "pending",
-                confidence: item.confidence,
-                extraction_notes: extraction.summary,
-                has_attachment: email.attachments.length > 0,
-                attachment_ids: email.attachments.map((a) => a.attachmentId).filter(Boolean) as string[],
-              };
+        // Deduplicate items from same email by type+title
+        const seenKeys = new Set<string>();
+        const uniqueItems = highConfidenceItems.filter((item: any) => {
+          const key = `${item.type}:${item.title || item.vendor || ""}`;
+          if (seenKeys.has(key)) return false;
+          seenKeys.add(key);
+          return true;
+        });
 
-              // Type-specific fields
-              if (item.type === "task") {
-                itemData.category = "task";
-                itemData.title = item.title;
-                itemData.description = item.description;
-                itemData.priority = normalizePriority(item.priority);
-              } else if (item.type === "receipt") {
-                itemData.category = "receipt";
-                itemData.title = `Receipt from ${item.vendor}`;
-                itemData.description = `${item.currency} ${item.amount}`;
-                itemData.receipt_category = item.category; // software, travel, medical, etc.
-                itemData.receipt_details = {
-                  vendor: item.vendor,
-                  amount: item.amount,
-                  currency: item.currency,
-                  date: item.date,
-                  invoiceNumber: item.invoiceNumber,
-                };
-                if (item.invoiceNumber) {
-                  itemData.extraction_notes = `${extraction.summary} | Invoice: ${item.invoiceNumber}`;
-                }
-              } else if (item.type === "meeting") {
-                itemData.category = "meeting"; // All meetings have category "meeting"
-                itemData.title = item.title;
-                itemData.description = item.description;
-                itemData.priority = "medium";
-                itemData.meeting_details = {
-                  attendees: item.attendees || [],
-                  suggestedTimes: item.dateTime ? [item.dateTime] : [],
-                  duration: item.duration || 60,
-                  topic: item.title,
-                };
-              }
+        console.log(
+          `[Extract Initial] Email "${email.subject}": ${uniqueItems.length} items extracted`
+        );
 
-              // Insert item
-              const { error: insertError } = await supabase
-                .from("items")
-                .insert(itemData);
+        // Build item data for each extracted item
+        for (const item of uniqueItems) {
+          // Parse sender email
+          const senderMatch = email.from.match(/<(.+?)>/);
+          const senderEmail = senderMatch ? senderMatch[1] : email.from;
+          const senderName = email.from
+            .replace(/<.+?>/, "")
+            .trim()
+            .replace(/"/g, "");
 
-              if (insertError) {
-                console.error(
-                  "[Extract Initial] Error inserting item:",
-                  insertError
-                );
-              } else {
-                totalItemsCreated++;
-              }
-            } catch (itemError) {
-              console.error(
-                "[Extract Initial] Error processing item:",
-                itemError
-              );
+          // Base item data
+          const itemData: any = {
+            user_id: user.id,
+            email_id: email.messageId,
+            sender_email: senderEmail,
+            sender_name: senderName || senderEmail,
+            email_date: email.internalDate.toISOString(),
+            status: "pending",
+            confidence: item.confidence,
+            extraction_notes: extraction.summary,
+            has_attachment: email.attachments.length > 0,
+            attachment_ids: email.attachments.map((a) => a.attachmentId).filter(Boolean) as string[],
+          };
+
+          // Type-specific fields
+          if (item.type === "task") {
+            itemData.category = "task";
+            itemData.title = item.title;
+            itemData.description = item.description;
+            itemData.priority = normalizePriority(item.priority);
+          } else if (item.type === "receipt") {
+            itemData.category = "receipt";
+            itemData.title = `Receipt from ${item.vendor}`;
+            itemData.description = `${item.currency} ${item.amount}`;
+            itemData.receipt_category = item.category;
+            itemData.receipt_details = {
+              vendor: item.vendor,
+              amount: item.amount,
+              currency: item.currency,
+              date: item.date,
+              invoiceNumber: item.invoiceNumber,
+            };
+            if (item.invoiceNumber) {
+              itemData.extraction_notes = `${extraction.summary} | Invoice: ${item.invoiceNumber}`;
             }
+          } else if (item.type === "meeting") {
+            itemData.category = "meeting";
+            itemData.title = item.title;
+            itemData.description = item.description;
+            itemData.priority = "medium";
+            itemData.meeting_details = {
+              attendees: item.attendees || [],
+              suggestedTimes: item.dateTime ? [item.dateTime] : [],
+              duration: item.duration || 60,
+              topic: item.title,
+            };
           }
-        } catch (emailError) {
-          console.error(
-            `[Extract Initial] Error extracting from email "${email.subject}":`,
-            emailError
-          );
-        }
 
-        // Add delay between emails to respect both request and token rate limits
-        // 30K tokens/min ÷ 5 emails = spread across 60 seconds = 12s between emails
-        if (i < parsedEmails.length - 1) {
-          console.log(`[Extract Initial] Waiting 12 seconds before next email...`);
-          await new Promise((resolve) => setTimeout(resolve, 12000));
+          itemsToInsert.push(itemData);
+        }
+      });
+
+      // Step 6: Batch insert all items
+      let totalItemsCreated = 0;
+      if (itemsToInsert.length > 0) {
+        const { error: insertError } = await supabase
+          .from("items")
+          .insert(itemsToInsert);
+
+        if (insertError) {
+          console.error("[Extract Initial] Error inserting items:", insertError);
+        } else {
+          totalItemsCreated = itemsToInsert.length;
         }
       }
 
