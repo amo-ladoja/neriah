@@ -335,34 +335,40 @@ const TaskCard = ({
           <ActionButton label="Snooze" iconPath="/snooze.svg" />
           <ActionButton label="Done" iconPath="/done.svg" onClick={onDone} />
         </div>
-        {!item.user_feedback && (
-          <div className="flex items-center gap-2 ml-auto">
-            <button
-              onClick={onThumbsUp}
-              className="hover:opacity-70 transition-opacity"
-            >
-              <Image
-                src="/correct.svg"
-                alt="Thumbs up"
-                width={14}
-                height={14}
-                className="w-[14px] h-[14px]"
-              />
-            </button>
-            <button
-              onClick={onThumbsDown}
-              className="hover:opacity-70 transition-opacity"
-            >
-              <Image
-                src="/incorrect.svg"
-                alt="Thumbs down"
-                width={14}
-                height={14}
-                className="w-[14px] h-[14px]"
-              />
-            </button>
-          </div>
-        )}
+        <div className="flex items-center gap-2 ml-auto">
+          <button
+            onClick={onThumbsUp}
+            disabled={!!item.user_feedback}
+            className="hover:opacity-70 transition-all disabled:cursor-default disabled:hover:opacity-100"
+          >
+            <Image
+              src="/correct.svg"
+              alt="Thumbs up"
+              width={14}
+              height={14}
+              className="w-[14px] h-[14px]"
+              style={item.user_feedback === "positive" ? {
+                filter: "brightness(0) saturate(100%) invert(76%) sepia(25%) saturate(491%) hue-rotate(107deg) brightness(92%) contrast(87%)"
+              } : undefined}
+            />
+          </button>
+          <button
+            onClick={onThumbsDown}
+            disabled={!!item.user_feedback}
+            className="hover:opacity-70 transition-all disabled:cursor-default disabled:hover:opacity-100"
+          >
+            <Image
+              src="/incorrect.svg"
+              alt="Thumbs down"
+              width={14}
+              height={14}
+              className="w-[14px] h-[14px]"
+              style={item.user_feedback === "negative" ? {
+                filter: "brightness(0) saturate(100%) invert(76%) sepia(25%) saturate(491%) hue-rotate(107deg) brightness(92%) contrast(87%)"
+              } : undefined}
+            />
+          </button>
+        </div>
       </div>
     </div>
   );
