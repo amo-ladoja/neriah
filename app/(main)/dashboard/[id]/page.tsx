@@ -9,6 +9,7 @@ import {
   generateReplyLink,
   generateMeetingLink,
   openInNewTab,
+  openGmailLink,
 } from "@/lib/utils/gmail-links";
 import AttachmentViewer from "@/components/AttachmentViewer";
 import type { Database } from "@/lib/types/database";
@@ -79,7 +80,8 @@ export default function ItemDetailPage() {
       title: item.title,
       email_id: item.email_id,
     });
-    openInNewTab(link);
+    // Use smart Gmail opener - tries app on mobile, falls back to web
+    openGmailLink(link, item.email_id);
   };
 
   const handleScheduleMeeting = () => {

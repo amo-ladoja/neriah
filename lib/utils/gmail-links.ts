@@ -110,11 +110,93 @@ export function generateCalendarEventLink(params: {
 }
 
 /**
+ * Detect if user is on a mobile device
+ */
+function isMobile(): boolean {
+  if (typeof window === "undefined" || typeof navigator === "undefined") return false;
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+/**
+ * Detect if user is on iOS
+ */
+function isIOS(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+
+/**
+ * Detect if user is on Android
+ */
+function isAndroid(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /Android/i.test(navigator.userAgent);
+}
+
+/**
+ * Generate Gmail app deep link for viewing a message
+ */
+function getGmailAppMessageLink(messageId: string): string | null {
+  if (isIOS()) {
+    // iOS Gmail app deep link
+    return `googlegmail://navigate?view=conversation&messageid=${messageId}`;
+  } else if (isAndroid()) {
+    // Android Gmail app deep link using intent
+    return `intent://mail/u/0/#all/${messageId}#Intent;scheme=https;package=com.google.android.gm;end`;
+  }
+  return null;
+}
+
+/**
  * Open link in new tab/window
+ * On mobile, tries to open Gmail app first, falls back to web
  */
 export function openInNewTab(url: string) {
-  if (typeof window !== "undefined") {
-    window.open(url, "_blank", "noopener,noreferrer");
+  if (typeof window === "undefined") return;
+  window.open(url, "_blank", "noopener,noreferrer");
+}
+
+/**
+ * Smart open for Gmail - tries app first on mobile, then falls back to web
+ */
+export function openGmailLink(webUrl: string, messageId?: string) {
+  if (typeof window === "undefined") return;
+
+  // On desktop, just open web
+  if (!isMobile()) {
+    window.open(webUrl, "_blank", "noopener,noreferrer");
+    return;
+  }
+
+  // On mobile, try Gmail app first
+  const appLink = messageId ? getGmailAppMessageLink(messageId) : null;
+
+  if (appLink) {
+    // Try to open the app
+    const startTime = Date.now();
+
+    // Create a hidden iframe to try opening the app (works better on iOS)
+    const iframe = document.createElement("iframe");
+    iframe.style.display = "none";
+    iframe.src = appLink;
+    document.body.appendChild(iframe);
+
+    // Also try window.location for Android
+    if (isAndroid()) {
+      window.location.href = appLink;
+    }
+
+    // Set a timeout to fall back to web if app doesn't open
+    setTimeout(() => {
+      document.body.removeChild(iframe);
+      // If less than 2 seconds passed, app probably didn't open
+      if (Date.now() - startTime < 2000) {
+        window.open(webUrl, "_blank", "noopener,noreferrer");
+      }
+    }, 1500);
+  } else {
+    // No app link available, open web
+    window.open(webUrl, "_blank", "noopener,noreferrer");
   }
 }
 
