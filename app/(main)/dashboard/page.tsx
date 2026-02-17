@@ -11,6 +11,7 @@ import {
   generateReplyLink,
   generateMeetingLink,
   openInNewTab,
+  openGmailLink,
 } from "@/lib/utils/gmail-links";
 import type { Database } from "@/lib/types/database";
 
@@ -129,6 +130,7 @@ interface TaskCardProps {
   onDone?: () => void;
   onThumbsUp?: () => void;
   onThumbsDown?: () => void;
+  feedbackState?: "positive" | "negative" | null;
 }
 
 const TaskCard = ({
@@ -140,7 +142,10 @@ const TaskCard = ({
   onDone,
   onThumbsUp,
   onThumbsDown,
+  feedbackState,
 }: TaskCardProps) => {
+  // Use local feedback state if available, otherwise fall back to item's feedback
+  const currentFeedback = feedbackState !== undefined ? feedbackState : item.user_feedback;
   const isReply = ["task", "reply", "follow_up", "deadline", "review"].includes(item.category);
   const isReceipt = ["receipt", "invoice"].includes(item.category);
   const isMeeting = item.category === "meeting";
@@ -237,7 +242,7 @@ const TaskCard = ({
       {/* Content */}
       {isReply && item.description && (
         <div className="w-full rounded-xl flex flex-col justify-center">
-          <p className="text-[8px] text-[#fdfdfd99] tracking-[5%] leading-[1.375] line-clamp-2">
+          <p className="text-[12px] text-[#fdfdfd99] tracking-[5%] leading-[1.375] line-clamp-2">
             {item.description}
           </p>
         </div>
@@ -250,11 +255,11 @@ const TaskCard = ({
             {item.receipt_details.amount?.toLocaleString() || "0.00"}
           </span>
           <div className="flex items-center gap-1">
-            <span className="text-[8px] font-medium text-[#fdfdfd99] tracking-[0.4px] leading-[2.5]">
+            <span className="text-[10px] font-medium text-[#fdfdfd99] tracking-[0.4px] leading-[2.5]">
               {item.receipt_details.vendor}
             </span>
             <CircleDot color="#fdfdfd99" />
-            <span className="text-[8px] font-medium text-[#fdfdfd99] tracking-[0.4px] leading-[2.5]">
+            <span className="text-[10px] font-medium text-[#fdfdfd99] tracking-[0.4px] leading-[2.5]">
               {item.receipt_details.invoiceNumber || "N/A"}
             </span>
           </div>
@@ -338,8 +343,7 @@ const TaskCard = ({
         <div className="flex items-center gap-2 ml-auto">
           <button
             onClick={onThumbsUp}
-            disabled={!!item.user_feedback}
-            className="hover:opacity-70 transition-all disabled:cursor-default disabled:hover:opacity-100"
+            className="hover:opacity-70 transition-all"
           >
             <Image
               src="/correct.svg"
@@ -347,15 +351,14 @@ const TaskCard = ({
               width={14}
               height={14}
               className="w-[14px] h-[14px]"
-              style={item.user_feedback === "positive" ? {
+              style={currentFeedback === "positive" ? {
                 filter: "brightness(0) saturate(100%) invert(76%) sepia(25%) saturate(491%) hue-rotate(107deg) brightness(92%) contrast(87%)"
               } : undefined}
             />
           </button>
           <button
             onClick={onThumbsDown}
-            disabled={!!item.user_feedback}
-            className="hover:opacity-70 transition-all disabled:cursor-default disabled:hover:opacity-100"
+            className="hover:opacity-70 transition-all"
           >
             <Image
               src="/incorrect.svg"
@@ -363,7 +366,7 @@ const TaskCard = ({
               width={14}
               height={14}
               className="w-[14px] h-[14px]"
-              style={item.user_feedback === "negative" ? {
+              style={currentFeedback === "negative" ? {
                 filter: "brightness(0) saturate(100%) invert(76%) sepia(25%) saturate(491%) hue-rotate(107deg) brightness(92%) contrast(87%)"
               } : undefined}
             />
@@ -390,6 +393,7 @@ export default function Dashboard() {
   const [undoItemId, setUndoItemId] = useState<string | null>(null);
   const undoIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const { subscribed, subscribe, clearBadge } = usePushNotifications();
+  const [localFeedback, setLocalFeedback] = useState<Record<string, "positive" | "negative" | null>>({});
 
   // Clear badge count when dashboard is opened
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -428,7 +432,8 @@ export default function Dashboard() {
       title: item.title,
       email_id: item.email_id,
     });
-    openInNewTab(link);
+    // Use smart Gmail opener - tries app on mobile, falls back to web
+    openGmailLink(link, item.email_id);
   };
 
   const handleScheduleMeeting = (item: Item) => {
@@ -493,9 +498,14 @@ export default function Dashboard() {
   };
 
   const handleFeedback = async (itemId: string, helpful: boolean) => {
+    // Optimistic update - immediately show the feedback state
+    setLocalFeedback(prev => ({ ...prev, [itemId]: helpful ? "positive" : "negative" }));
+
     const result = await submitFeedback(itemId, helpful);
     if (result.error) {
       console.error("Failed to submit feedback:", result.error);
+      // Revert on error
+      setLocalFeedback(prev => ({ ...prev, [itemId]: null }));
     }
   };
 
@@ -734,6 +744,7 @@ export default function Dashboard() {
                   onDone={() => handleMarkComplete(item.id)}
                   onThumbsUp={() => handleFeedback(item.id, true)}
                   onThumbsDown={() => handleFeedback(item.id, false)}
+                  feedbackState={localFeedback[item.id] !== undefined ? localFeedback[item.id] : (item.user_feedback as "positive" | "negative" | null)}
                 />
               ))}
           </div>
