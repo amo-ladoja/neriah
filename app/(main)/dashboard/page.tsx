@@ -284,12 +284,12 @@ const TaskCard = ({
               : item.title}
           </span>
           <div className="flex items-center gap-1">
-            <span className="text-[8px] font-medium text-[#fdfdfd99] tracking-[0.4px] leading-[2.5]">
-              {item.meeting_details.duration || 30} minutes
+            <span className="text-[10px] font-medium text-[#fdfdfd99] tracking-[0.4px] leading-[2.5]">
+              {item.meeting_details.duration || 30} {(item.meeting_details.duration || 30) === 1 ? "minute" : "minutes"}
             </span>
             <CircleDot color="#fdfdfd99" />
-            <span className="text-[8px] font-medium text-[#fdfdfd99] tracking-[0.4px] leading-[2.5]">
-              {item.meeting_details.attendees?.length || 0} attendees
+            <span className="text-[10px] font-medium text-[#fdfdfd99] tracking-[0.4px] leading-[2.5]">
+              {item.meeting_details.attendees?.length || 0} {(item.meeting_details.attendees?.length || 0) === 1 ? "attendee" : "attendees"}
             </span>
           </div>
         </div>
@@ -674,7 +674,7 @@ export default function Dashboard() {
                   {filteredItems.length}
                 </span>
                 <span className="text-sm font-medium text-[#fdfdfd99] tracking-[0.4px] leading-[1.67]">
-                  items need attention
+                  {filteredItems.length === 1 ? "item needs" : "items need"} attention
                 </span>
               </div>
               <button
