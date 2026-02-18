@@ -196,15 +196,15 @@
       "benefit": "the AI improves over time and I can report issues",
       "acceptanceCriteria": [
         "✅ Thumbs up/down buttons on each item (tasks, receipts, meetings)",
-        "❌ Optional: \"What was wrong?\" comment field",
+        "✅ Optional: \"What was wrong?\" comment field",
         "✅ Feedback saved immediately",
-        "❌ Visual confirmation after submission (\"Thanks for your feedback!\")",
-        "❌ Can change feedback after submission"
+        "✅ Visual confirmation after submission (\"Thanks for your feedback!\")",
+        "✅ Can change feedback after submission"
       ],
-      "status": "in_progress",
-      "completedCriteria": 2,
+      "status": "completed",
+      "completedCriteria": 5,
       "totalCriteria": 5,
-      "notes": "Thumbs up/down buttons and API endpoint working. Feedback saved to database. Need: Comment field, visual confirmation toast, ability to change feedback"
+      "notes": "Fully implemented: Thumbs up/down buttons, comment field on detail page (shows after thumbs down), visual confirmation toast (4 seconds), users can change feedback by clicking the other button"
     },
     {
       "id": "US-12",

@@ -148,13 +148,18 @@ export default function ItemDetailPage() {
     }
   };
 
-  const handleFeedback = async (helpful: boolean) => {
+  const handleFeedback = async (helpful: boolean, comment?: string) => {
     if (!item) return;
-    await submitFeedback(item.id, helpful);
+    await submitFeedback(item.id, helpful, comment);
     setItem({ ...item, user_feedback: helpful ? "positive" : "negative" });
+    setFeedbackComment("");
+    setShowFeedbackToast(true);
+    setTimeout(() => setShowFeedbackToast(false), 4000);
   };
 
   const [showSnoozeMenu, setShowSnoozeMenu] = useState(false);
+  const [feedbackComment, setFeedbackComment] = useState("");
+  const [showFeedbackToast, setShowFeedbackToast] = useState(false);
 
   const getSnoozeUntil = (option: "3hrs" | "tomorrow" | "nextweek") => {
     if (option === "3hrs") {
@@ -730,7 +735,6 @@ export default function ItemDetailPage() {
               {/* Correct Button */}
               <button
                 onClick={() => handleFeedback(true)}
-                disabled={!!item.user_feedback}
                 className="relative flex-1 flex items-center justify-center gap-[8px]"
                 style={{
                   padding: "14px 52px",
@@ -767,7 +771,6 @@ export default function ItemDetailPage() {
               {/* Incorrect Button */}
               <button
                 onClick={() => handleFeedback(false)}
-                disabled={!!item.user_feedback}
                 className="relative flex-1 flex items-center justify-center gap-[8px]"
                 style={{
                   padding: "14px 52px",
@@ -801,6 +804,44 @@ export default function ItemDetailPage() {
                 </span>
               </button>
             </div>
+
+            {/* Comment Field - Shows when negative feedback is selected */}
+            {item.user_feedback === "negative" && (
+              <div className="flex flex-col gap-[8px] mt-[8px]">
+                <textarea
+                  value={feedbackComment}
+                  onChange={(e) => setFeedbackComment(e.target.value)}
+                  placeholder="What was wrong? (optional)"
+                  rows={3}
+                  className="w-full px-[12px] py-[10px] rounded-[12px] text-[12px] text-[#fdfdfdcc] placeholder-[#fdfdfd66] resize-none focus:outline-none focus:border-[#fdfdfd66]"
+                  style={{
+                    background: "rgba(19, 19, 19, 0.4)",
+                    border: "0.4px solid rgba(253, 253, 253, 0.3)",
+                    letterSpacing: "0.4px",
+                  }}
+                />
+                <button
+                  onClick={() => handleFeedback(false, feedbackComment)}
+                  className="flex items-center justify-center gap-[6px] px-[16px] py-[8px] rounded-[12px] self-end"
+                  style={{
+                    background: "rgba(253, 253, 253, 0.1)",
+                    border: "0.4px solid rgba(253, 253, 253, 0.3)",
+                  }}
+                >
+                  <span
+                    style={{
+                      fontWeight: 500,
+                      fontSize: 12,
+                      lineHeight: "1.19em",
+                      letterSpacing: "0.4px",
+                      color: "#FFFFFF",
+                    }}
+                  >
+                    Submit Feedback
+                  </span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1092,6 +1133,44 @@ export default function ItemDetailPage() {
               Undo
             </span>
           </button>
+        </div>
+      )}
+
+      {/* Feedback Toast */}
+      {showFeedbackToast && (
+        <div className="fixed bottom-[120px] left-1/2 -translate-x-1/2 z-50">
+          <div
+            className="flex items-center gap-[12px] px-[16px] py-[12px] rounded-full"
+            style={{
+              backgroundColor: "rgba(30, 30, 30, 0.95)",
+              backdropFilter: "blur(12px)",
+              border: "0.4px solid rgba(52, 168, 83, 0.4)",
+            }}
+          >
+            <div
+              className="w-[24px] h-[24px] rounded-full flex items-center justify-center"
+              style={{ background: "rgba(52, 168, 83, 0.2)" }}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M20 6L9 17L4 12"
+                  stroke="#34A853"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+            <span
+              style={{
+                fontSize: 12,
+                fontWeight: 500,
+                color: "#FFFFFF",
+              }}
+            >
+              Thanks for your feedback!
+            </span>
+          </div>
         </div>
       )}
     </div>

@@ -4,6 +4,124 @@ This file tracks major changes and updates to the codebase.
 
 ---
 
+## 2026-02-18 15:30 EST | Alpha Landing Page - Final Polish
+
+### Context
+Removed the yellow gradient from the bottom CTA section in `app/alpha/page.tsx` as it had a sharp visible edge that didn't match the design.
+
+### Status
+✅ Complete
+
+---
+
+## 2026-02-18 15:00 EST | Alpha Landing Page - Dithered Background
+
+### Context
+Added dithered dot pattern background to `app/alpha/page.tsx`:
+
+**Dithered Dot Pattern:**
+- CSS radial-gradient creating repeating dot grid across the page
+- 16px spacing, 0.15 opacity, 1px dots
+- Positioned as absolute overlay with pointer-events-none
+
+**Carousel Section Fix:**
+- Added solid `bg-[#131313]` background to carousel section
+- Prevents dithered dots from showing through carousel content
+
+### Status
+✅ Complete
+
+---
+
+## 2026-02-18 14:00 EST | Alpha Landing Page - Carousel Implementation
+
+### Context
+Implemented auto-sliding carousel in `app/alpha/page.tsx`:
+
+**Carousel Features:**
+- 4 slides: Smart Extraction, One-Tap Actions, Receipt Intelligence, Ask your Inbox
+- Auto-advances every 4 seconds with smooth horizontal scroll
+- Tab headers sync with carousel position (scrolls to show active tab)
+- Uses refs for DOM access (`carouselRef`, `tabsRef`, `tabRefs`)
+
+**Fix Applied:**
+- Removed duplicated text content - images already contain headings/descriptions
+- Simplified to show only the feature images
+
+### Status
+✅ Complete
+
+---
+
+## 2026-02-18 13:00 EST | Alpha Landing Page - Style Adjustments
+
+### Context
+Multiple UI refinements to `app/alpha/page.tsx` based on Figma design:
+
+**Hamburger Menu:**
+- Styled to match search/back button pattern (rounded-full, bg-[#fdfdfd1f], border-[#fdfdfd33])
+
+**Logo Sizes:**
+- Header logo: 100x28px
+- Footer logo: 125x35px (reduced by 50%, then increased 2.5x)
+
+**3D Elements Positioning:**
+- Thumbs up: left-[13px], top-[calc(15%-16px)], 77x77px (mobile) / 96x96px (desktop)
+- 3D Neriah logo: right-[8px], bottom-[calc(35%-64px)], 96x96px (mobile) / 100x100px (desktop)
+- Multiple iterations to get exact pixel-perfect positioning
+
+**Form Consistency:**
+- Both email forms styled identically (rounded-full inputs, yellow CTA buttons)
+
+### Status
+✅ Complete
+
+---
+
+## 2026-02-18 12:00 EST | Alpha Landing Page Creation
+
+### Context
+Created new alpha landing page at `app/alpha/page.tsx` based on Figma design for early access signups.
+
+**Page Structure:**
+- Header: Neriah logo + hamburger menu
+- Hero section: Mobile mockup with 3D decorative elements (thumbs up, 3D logo)
+- Email signup form with "Join the Alpha" CTA
+- Feature carousel with 4 slides
+- Bottom CTA section with "Request Early Access" form
+- Footer with logo and copyright
+
+**Technical Implementation:**
+- Next.js app router page
+- React state for email inputs and form submission
+- useEffect for carousel auto-advance
+- Responsive design (mobile-first with md: breakpoints)
+- Tailwind CSS styling matching existing design system
+
+### Status
+✅ Complete
+
+---
+
+## 2026-02-17 | Dashboard Card Text Size & Pluralization Fixes
+
+### Context
+Made UI refinements to the dashboard cards in `app/(main)/dashboard/page.tsx`:
+
+**Text Size Changes:**
+- Receipt card: Vendor name and invoice number reduced from 12px to 10px
+- Meeting card: Duration and attendees text changed from 8px to 10px
+
+**Pluralization Fixes:**
+- Meeting card: "60 minutes" → "1 minute" / "60 minutes" (singular/plural)
+- Meeting card: "1 attendees" → "1 attendee" / "2 attendees" (singular/plural)
+- Status bar: "items need attention" → "1 item needs attention" / "10 items need attention"
+
+### Status
+✅ Complete
+
+---
+
 ## 2026-02-11 | LLM-Powered Chat Implementation (Planned)
 
 ### Context
