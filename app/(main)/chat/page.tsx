@@ -60,7 +60,7 @@ const itemToCard = (item: Item): ItemCard => {
   if (isReceipt && item.receipt_details) {
     const amount = item.receipt_details.amount?.toLocaleString() || "0";
     const currency = item.receipt_details.currency || "$";
-    const category = item.receipt_details.category || "";
+    const category = item.receipt_category || "";
     const date = item.email_date ? new Date(item.email_date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "";
     subtitle = `${currency}${amount}${category ? ` · ${category}` : ""}${date ? ` · ${date}` : ""}`;
   } else if (isMeeting && item.meeting_details) {
