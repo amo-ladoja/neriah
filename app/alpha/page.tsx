@@ -27,7 +27,7 @@ export default function AlphaLandingPage() {
   useEffect(() => {
     const interval = setInterval(() => {
       setActiveTab((prev) => (prev + 1) % carouselData.length);
-    }, 4000); // Change slide every 4 seconds
+    }, 8000); // Change slide every 8 seconds
 
     return () => clearInterval(interval);
   }, []);
@@ -223,7 +223,7 @@ export default function AlphaLandingPage() {
 
           {/* Subtext */}
           <p className="text-center text-[14px] text-[#fdfdfd99] leading-relaxed mt-2 max-w-[320px]">
-            We extracts what matters from your inbox; tasks, receipts, meetings,
+            Extract what matters from your inbox; tasks, receipts, meetings,
             all ready for one tap actions.
           </p>
 

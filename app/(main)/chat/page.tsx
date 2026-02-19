@@ -4,7 +4,10 @@ import { useEffect, useMemo, useRef, useState, useCallback, Suspense } from "rea
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useChats } from "@/lib/hooks/useChats";
-import type { Chat, ChatMessageContent } from "@/lib/types/database";
+import { useItems } from "@/lib/hooks/useItems";
+import type { Chat, ChatMessageContent, Database } from "@/lib/types/database";
+
+type Item = Database["public"]["Tables"]["items"]["Row"];
 
 type ItemKind = "task" | "receipt" | "meeting";
 
@@ -48,38 +51,34 @@ const PROMPT_SUGGESTIONS = [
   "What tasks are due this week?",
 ];
 
-const MOCK_ITEMS: ItemCard[] = [
-  {
-    id: "task-1",
-    title: "Reply to John about Q4 report",
-    subtitle: "Urgent · From john@company.com",
-    kind: "task",
-  },
-  {
-    id: "receipt-1",
-    title: "Receipt from AWS",
-    subtitle: "$184.29 · Software · Jan 12",
-    kind: "receipt",
-  },
-  {
-    id: "meeting-1",
-    title: "Meeting request: Budget review",
-    subtitle: "2pm–3pm · 2 attendees",
-    kind: "meeting",
-  },
-  {
-    id: "receipt-2",
-    title: "Receipt from Delta",
-    subtitle: "$412.80 · Travel · Jan 18",
-    kind: "receipt",
-  },
-  {
-    id: "task-2",
-    title: "Follow up on contract signature",
-    subtitle: "High · From legal@vendor.com",
-    kind: "task",
-  },
-];
+// Helper to convert database item to ItemCard format
+const itemToCard = (item: Item): ItemCard => {
+  const isReceipt = ["receipt", "invoice"].includes(item.category);
+  const isMeeting = item.category === "meeting";
+
+  let subtitle = "";
+  if (isReceipt && item.receipt_details) {
+    const amount = item.receipt_details.amount?.toLocaleString() || "0";
+    const currency = item.receipt_details.currency || "$";
+    const category = item.receipt_details.category || "";
+    const date = item.email_date ? new Date(item.email_date).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "";
+    subtitle = `${currency}${amount}${category ? ` · ${category}` : ""}${date ? ` · ${date}` : ""}`;
+  } else if (isMeeting && item.meeting_details) {
+    const attendees = item.meeting_details.attendees?.length || 0;
+    const duration = item.meeting_details.duration || 30;
+    subtitle = `${duration}min · ${attendees} ${attendees === 1 ? "attendee" : "attendees"}`;
+  } else {
+    const priority = item.priority ? item.priority.charAt(0).toUpperCase() + item.priority.slice(1) : "";
+    subtitle = `${priority}${priority ? " · " : ""}From ${item.sender_email || "unknown"}`;
+  }
+
+  return {
+    id: item.id,
+    title: item.title,
+    subtitle,
+    kind: isReceipt ? "receipt" : isMeeting ? "meeting" : "task",
+  };
+};
 
 // ============================================
 // Gradient Border Style (reusable)
@@ -388,6 +387,9 @@ function ChatPageContent() {
   // Fetch previous chats
   const { chats: previousChats, refetch: refetchChats } = useChats();
 
+  // Fetch real items from dashboard
+  const { items: dashboardItems } = useItems("all");
+
   // Randomly select 3 prompts on mount
   const randomPrompts = useMemo(() => {
     const shuffled = [...PROMPT_SUGGESTIONS].sort(() => Math.random() - 0.5);
@@ -559,7 +561,10 @@ function ChatPageContent() {
     });
   };
 
-  const filteredPickerItems = MOCK_ITEMS.filter((item) => {
+  // Convert dashboard items to ItemCard format and filter
+  const pickerItems = useMemo(() => dashboardItems.map(itemToCard), [dashboardItems]);
+
+  const filteredPickerItems = pickerItems.filter((item) => {
     const matchesTab = pickerTab === "all" || item.kind === pickerTab;
     const matchesQuery =
       pickerQuery.trim().length === 0 ||
@@ -716,10 +721,10 @@ function ChatPageContent() {
                 <button
                   key={tab}
                   onClick={() => setPickerTab(tab as ItemKind | "all")}
-                  className={`rounded-full px-3 py-1 text-[11px] ${
+                  className={`flex items-center justify-center px-1.5 py-0.5 rounded-xl text-xs font-medium tracking-[0.2px] leading-[1.67] transition-all ${
                     pickerTab === tab
-                      ? "bg-[#E8F401] text-[#131313]"
-                      : "border border-[#ffffff1a] text-[#FDFDFD99]"
+                      ? "bg-[#80d0ae] border border-[#80d0ae4d] text-[#030303cc]"
+                      : "bg-[#fdfdfd26] border border-[#fdfdfd33]/40 text-[#fdfdfdcc] hover:bg-[#fdfdfd33]"
                   }`}
                 >
                   {tab === "all"
