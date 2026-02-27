@@ -153,7 +153,7 @@ export default function AlphaLandingPage() {
                   <button
                     onClick={() => {
                       setShowMenu(false);
-                      router.push("/alpha/terms");
+                      router.push("/terms");
                     }}
                     className="flex items-center gap-[16px] text-[16px] text-[#fdfdfdcc] hover:text-[#fdfdfd] transition-colors"
                   >
@@ -349,7 +349,7 @@ export default function AlphaLandingPage() {
             className="h-[35px] w-auto mb-4"
           />
           <button
-            onClick={() => router.push("/alpha/terms")}
+            onClick={() => router.push("/terms")}
             className="text-[12px] text-[#E8F401] hover:text-[#E8F401]/80 transition-colors mb-2"
           >
             Terms of Service
