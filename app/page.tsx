@@ -102,12 +102,12 @@ export default function LandingPage() {
 
         {/* Footer */}
         <div className="mb-6">
-          <button
+          <a
+            href="/privacy"
             className="text-fdfdfd-60 text-[12px] md:text-[12px] font-medium tracking-[0.3em] hover:text-fdfdfd-100 transition-colors uppercase cursor-pointer"
-            onClick={() => router.push("/privacy")}
           >
             PRIVACY POLICY
-          </button>
+          </a>
         </div>
       </div>
     </div>
