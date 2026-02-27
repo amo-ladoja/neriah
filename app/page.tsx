@@ -104,9 +104,9 @@ export default function LandingPage() {
         <div className="mb-6">
           <button
             className="text-fdfdfd-60 text-[12px] md:text-[12px] font-medium tracking-[0.3em] hover:text-fdfdfd-100 transition-colors uppercase cursor-pointer"
-            onClick={() => router.push("/terms")}
+            onClick={() => router.push("/privacy")}
           >
-            USER PRIVACY NOTICE
+            PRIVACY POLICY
           </button>
         </div>
       </div>
