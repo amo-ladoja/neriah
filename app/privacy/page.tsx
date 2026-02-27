@@ -210,7 +210,7 @@ export default function PrivacyPolicyPage() {
               className="text-xs font-semibold tracking-[0.25em] text-center"
               style={{ color: "rgba(253, 253, 253, 0.8)" }}
             >
-              USER PRIVACY NOTICE
+              PRIVACY POLICY
             </span>
           </div>
         </div>
