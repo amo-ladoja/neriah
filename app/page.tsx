@@ -2,10 +2,12 @@
 
 import { signInWithGoogle } from "@/lib/actions/auth";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 
 export default function LandingPage() {
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const handleSignIn = async () => {
     try {
@@ -102,10 +104,7 @@ export default function LandingPage() {
         <div className="mb-6">
           <button
             className="text-fdfdfd-60 text-[12px] md:text-[12px] font-medium tracking-[0.3em] hover:text-fdfdfd-100 transition-colors uppercase cursor-pointer"
-            onClick={() => {
-              // TODO: Open privacy policy modal/page
-              console.log("Privacy notice clicked");
-            }}
+            onClick={() => router.push("/alpha/terms")}
           >
             USER PRIVACY NOTICE
           </button>
