@@ -297,6 +297,38 @@ interface PromptPillProps {
   onClick: () => void;
 }
 
+// ============================================
+// Typing Indicator Component
+// ============================================
+
+const TypingIndicator = () => (
+  <div className="flex justify-start">
+    <div
+      className="relative rounded-[24px] px-4 py-3 backdrop-blur-[12px]"
+      style={{ backgroundColor: "rgba(253, 253, 253, 0.04)" }}
+    >
+      {/* Gradient border */}
+      <div
+        className="absolute inset-0 rounded-[24px] p-[0.4px] pointer-events-none"
+        style={gradientBorderStyle}
+      />
+      <div className="flex items-center gap-1">
+        {[0, 1, 2].map((i) => (
+          <div
+            key={i}
+            className="w-2 h-2 rounded-full bg-[#fdfdfd66] animate-bounce"
+            style={{ animationDelay: `${i * 0.15}s` }}
+          />
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+// ============================================
+// Prompt Pill Component
+// ============================================
+
 const PromptPill = ({ text, onClick }: PromptPillProps) => (
   <button
     onClick={onClick}
@@ -383,6 +415,7 @@ function ChatPageContent() {
   const inputContainerRef = useRef<HTMLDivElement>(null);
   const [inputContainerHeight, setInputContainerHeight] = useState(52);
   const [textareaHeight, setTextareaHeight] = useState(20);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Fetch previous chats
   const { chats: previousChats, refetch: refetchChats } = useChats();
@@ -453,6 +486,7 @@ function ChatPageContent() {
     };
     setMessages((prev) => [...prev, userMessage]);
     setInputValue("");
+    setIsLoading(true);
 
     try {
       // If this is a new chat, create it first
@@ -517,6 +551,7 @@ function ChatPageContent() {
       };
       setMessages((prev) => [...prev, assistantMessage]);
       setAttachedItems([]);
+      setIsLoading(false);
 
       // Save assistant message to chat
       if (currentChatId) {
@@ -541,6 +576,7 @@ function ChatPageContent() {
         refetchChats();
       }
     } catch (error) {
+      setIsLoading(false);
       const assistantMessage: ChatMessage = {
         id: `assistant-${Date.now()}`,
         role: "assistant",
@@ -653,6 +689,7 @@ function ChatPageContent() {
                   />
                 )
               )}
+              {isLoading && <TypingIndicator />}
             </div>
           )}
         </div>
