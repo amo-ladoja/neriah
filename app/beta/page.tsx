@@ -11,7 +11,7 @@ const carouselData = [
   { id: 3, tab: "Ask your Inbox", image: "/ask_your_inbox.png" },
 ];
 
-export default function AlphaLandingPage() {
+export default function BetaLandingPage() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [bottomEmail, setBottomEmail] = useState("");
@@ -65,12 +65,29 @@ export default function AlphaLandingPage() {
     if (!emailValue.trim()) return;
 
     setIsSubmitting(true);
-    // TODO: Implement actual email submission
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    setIsSubmitting(false);
-    setSubmitted(true);
-    setEmail("");
-    setBottomEmail("");
+
+    try {
+      const response = await fetch("/api/beta/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: emailValue.trim() }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("Signup error:", data.error);
+        // Still show success to avoid exposing if email exists
+      }
+
+      setSubmitted(true);
+      setEmail("");
+      setBottomEmail("");
+    } catch (error) {
+      console.error("Signup error:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -244,7 +261,7 @@ export default function AlphaLandingPage() {
               disabled={isSubmitting || submitted}
               className="w-fit px-20 py-2 mx-auto rounded-full bg-[#E8F401] text-[#131313] font-semibold text-[14px] hover:bg-[#E8F401]/90 transition-colors disabled:opacity-70"
             >
-              {submitted ? "You're on the list!" : isSubmitting ? "Joining..." : "Join the Alpha"}
+              {submitted ? "You're on the list!" : isSubmitting ? "Joining..." : "Join the Beta"}
             </button>
           </form>
 
@@ -334,7 +351,7 @@ export default function AlphaLandingPage() {
 
             {/* Footer text */}
             <p className="text-center text-[12px] text-[#fdfdfd66] mt-3">
-              Free during alpha. No credit card required.
+              Free during beta. No credit card required.
             </p>
           </div>
         </section>
@@ -349,7 +366,7 @@ export default function AlphaLandingPage() {
             className="h-[35px] w-auto mb-4"
           />
           <button
-            onClick={() => router.push("/terms")}
+            onClick={() => router.push("/beta/terms")}
             className="text-[12px] text-[#E8F401] hover:text-[#E8F401]/80 transition-colors mb-2"
           >
             Terms of Service

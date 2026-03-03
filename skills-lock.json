@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "skills": {
+    "ad-creative": {
+      "source": "coreyhaines31/marketingskills",
+      "sourceType": "github",
+      "computedHash": "a8061328cfe48414a71223f1d0ffb587dc2a149805e408a626f9df7e0419cf24"
+    }
+  }
+}
