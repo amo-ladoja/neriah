@@ -399,8 +399,11 @@ export default function Dashboard() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => { clearBadge(); }, []);
 
-  // Filter items based on search query
+  // Filter items based on search query and hide items being completed
   const filteredItems = items.filter((item) => {
+    // Hide item that's being completed (during undo countdown)
+    if (item.id === undoItemId) return false;
+
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase();
     return (
